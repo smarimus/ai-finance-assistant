@@ -1,0 +1,2745 @@
+# AI Finance Assistant - Complete Technical Specifications
+
+## Tech Stack
+- **Multi-Agent System**: LangGraph
+- **Language Model**: OpenAI GPT-4
+- **Vector Database**: FAISS
+- **Market Data**: Alpha Vantage API
+- **Web Interface**: Streamlit
+- **State Management**: LangGraph
+
+## Project Structure
+```
+ai_finance_assistant/
+├── src/
+│   ├── agents/
+│   │   ├── __init__.py
+│   │   ├── base_agent.py
+│   │   ├── finance_qa_agent.py
+│   │   ├── portfolio_agent.py
+│   │   ├── market_agent.py
+│   │   └── goal_agent.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── state.py
+│   │   ├── workflow.py
+│   │   └── config.py
+│   ├── data/
+│   │   ├── __init__.py
+│   │   ├── market_data.py
+│   │   └── knowledge_base/
+│   ├── rag/
+│   │   ├── __init__.py
+│   │   ├── vector_store.py
+│   │   ├── retriever.py
+│   │   └── embeddings.py
+│   ├── web_app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── chat_tab.py
+│   │   ├── portfolio_tab.py
+│   │   ├── market_tab.py
+│   │   └── goals_tab.py
+│   └── utils/
+│       ├── __init__.py
+│       ├── portfolio_calc.py
+│       └── helpers.py
+├── requirements.txt
+├── config.yaml
+└── README.md
+```
+
+---
+
+## 1. CORE STATE MANAGEMENT (`src/core/state.py`)
+
+### Prompt for :
+```python
+# Create a comprehensive state management system for a multi-agent financial assistant
+# Using LangGraph TypedDict for state management
+# Include conversation history, portfolio data, market context, user preferences
+
+from typing import TypedDict, List, Optional, Dict, Any
+from datetime import datetime
+
+class FinanceAssistantState(TypedDict):
+    """
+    Complete state schema for finance assistant with:
+    - User query and conversation history
+    - Portfolio data and analysis results
+    - Market context and real-time data
+    - Agent responses and routing information
+    - User preferences and session data
+    """
+    # User interaction
+    user_query: str
+    conversation_history: List[Dict[str, Any]]
+    current_agent: Optional[str]
+    
+    # Portfolio management
+    portfolio_data: Optional[Dict[str, Any]]
+    portfolio_analysis: Optional[Dict[str, Any]]
+    
+    # Market data
+    market_context: Optional[Dict[str, Any]]
+    market_cache: Dict[str, Any]
+    
+    # Agent responses
+    agent_responses: List[Dict[str, Any]]
+    rag_context: List[str]
+    
+    # User preferences
+    risk_tolerance: Optional[str]
+    investment_goals: List[Dict[str, Any]]
+    user_profile: Dict[str, Any]
+    
+    # Session management
+    session_id: str
+    timestamp: datetime
+    error_context: Optional[Dict[str, Any]]
+```
+
+---
+
+## 2. CONFIGURATION (`src/core/config.py`)
+
+### Prompt for :
+```python
+# Create a comprehensive configuration management system
+# Include API keys, model settings, database paths, caching configs
+# Support environment variables and YAML config files
+
+import os
+from dataclasses import dataclass
+from typing import Dict, Any
+import yaml
+
+@dataclass
+class APIConfig:
+    """API configuration for external services"""
+    openai_api_key: str
+    alpha_vantage_key: str
+    openai_model: str = "gpt-4"
+    max_tokens: int = 1000
+    temperature: float = 0.7
+
+@dataclass
+class VectorDBConfig:
+    """Vector database configuration for FAISS"""
+    index_path: str = "data/faiss_index"
+    embedding_model: str = "text-embedding-ada-002"
+    chunk_size: int = 500
+    chunk_overlap: int = 50
+
+@dataclass
+class CacheConfig:
+    """Caching configuration for market data"""
+    market_data_ttl: int = 1800  # 30 minutes
+    portfolio_cache_ttl: int = 300  # 5 minutes
+    max_cache_size: int = 1000
+
+@dataclass
+class AppConfig:
+    """Main application configuration"""
+    api: APIConfig
+    vector_db: VectorDBConfig
+    cache: CacheConfig
+    debug: bool = False
+    log_level: str = "INFO"
+
+def load_config() -> AppConfig:
+    """Load configuration from environment variables and config file"""
+    # Implementation to load from .env and config.yaml
+    pass
+```
+
+---
+
+## 3. BASE AGENT CLASS (`src/agents/base_agent.py`)
+
+### Prompt for :
+```python
+# Create a sophisticated base agent class for financial assistant
+# Include LLM integration, tool management, error handling, logging
+# Support for context preservation and response formatting
+
+from abc import ABC, abstractmethod
+from typing import Dict, Any, List, Optional
+from langchain.llms.base import LLM
+from langchain.tools import BaseTool
+import logging
+from src.core.state import FinanceAssistantState
+
+class BaseFinanceAgent(ABC):
+    """
+    Abstract base class for all financial assistant agents
+    
+    Features:
+    - OpenAI LLM integration with error handling
+    - Tool management and execution
+    - Context preservation and memory
+    - Response formatting with source attribution
+    - Logging and debugging capabilities
+    """
+    
+    def __init__(
+        self, 
+        llm: LLM, 
+        tools: List[BaseTool], 
+        agent_name: str,
+        system_prompt: str
+    ):
+        self.llm = llm
+        self.tools = tools
+        self.agent_name = agent_name
+        self.system_prompt = system_prompt
+        self.logger = logging.getLogger(f"agent.{agent_name}")
+    
+    @abstractmethod
+    def execute(self, state: FinanceAssistantState) -> Dict[str, Any]:
+        """
+        Execute agent logic and return response
+        
+        Returns:
+        - agent_response: str - The formatted response
+        - sources: List[str] - Source citations
+        - confidence: float - Response confidence score
+        - next_agent: Optional[str] - Suggested next agent
+        - updated_context: Dict - Updated context information
+        """
+        pass
+    
+    def format_response(self, content: str, sources: List[str] = None) -> Dict[str, Any]:
+        """Format agent response with sources and metadata"""
+        pass
+    
+    def handle_error(self, error: Exception, context: str) -> Dict[str, Any]:
+        """Handle errors gracefully with fallback responses"""
+        pass
+    
+    def should_escalate(self, query: str, context: Dict[str, Any]) -> Optional[str]:
+        """Determine if query should be escalated to another agent"""
+        pass
+```
+
+---
+
+## 4. FINANCE Q&A AGENT (`src/agents/finance_qa_agent.py`)
+
+### Prompt for :
+```python
+# Create a comprehensive Finance Q&A Agent that inherits from BaseFinanceAgent
+# Integrate with RAG system for knowledge retrieval
+# Handle basic financial education queries with source attribution
+# Include query classification and response confidence scoring
+
+from typing import Dict, Any, List
+from src.agents.base_agent import BaseFinanceAgent
+from src.rag.retriever import FinanceRetriever
+from src.core.state import FinanceAssistantState
+
+class FinanceQAAgent(BaseFinanceAgent):
+    """
+    Finance Q&A Agent for educational queries
+    
+    Capabilities:
+    - Answer basic financial concepts (stocks, bonds, ETFs, diversification)
+    - Retrieve relevant information from knowledge base using RAG
+    - Provide source citations and confidence scores
+    - Classify query complexity and escalate when needed
+    - Handle follow-up questions with context
+    """
+    
+    def __init__(self, llm, retriever: FinanceRetriever):
+        system_prompt = """
+        You are a helpful financial education assistant. Your role is to:
+        1. Explain financial concepts in simple, beginner-friendly language
+        2. Always cite your sources when providing information
+        3. Avoid giving specific investment advice - focus on education
+        4. Ask clarifying questions when queries are ambiguous
+        5. Suggest escalation to specialized agents when appropriate
+        
+        Guidelines:
+        - Use analogies and examples to explain complex concepts
+        - Include relevant definitions for financial terms
+        - Provide balanced perspectives on investment strategies
+        - Always include appropriate disclaimers
+        """
+        super().__init__(llm, [], "finance_qa", system_prompt)
+        self.retriever = retriever
+    
+    def execute(self, state: FinanceAssistantState) -> Dict[str, Any]:
+        """
+        Process financial education query
+        
+        Steps:
+        1. Extract and classify the financial question
+        2. Retrieve relevant context from knowledge base
+        3. Generate educational response with sources
+        4. Determine confidence score and next steps
+        5. Update conversation context
+        """
+        query = state["user_query"]
+        
+        # Retrieve relevant financial content
+        retrieved_docs = self.retriever.retrieve(query, k=3)
+        
+        # Build context for LLM
+        context = self._build_context(query, retrieved_docs, state)
+        
+        # Generate response
+        response = self._generate_response(context)
+        
+        # Format and return
+        return self.format_response(
+            content=response["content"],
+            sources=response["sources"],
+            confidence=response["confidence"],
+            next_agent=self._suggest_next_agent(query)
+        )
+    
+    def _classify_query(self, query: str) -> Dict[str, Any]:
+        """Classify the type of financial query for better routing"""
+        pass
+    
+    def _build_context(self, query: str, docs: List, state: FinanceAssistantState) -> str:
+        """Build comprehensive context for LLM response generation"""
+        pass
+    
+    def _generate_response(self, context: str) -> Dict[str, Any]:
+        """Generate educational response using LLM with retrieved context"""
+        pass
+    
+    def _suggest_next_agent(self, query: str) -> Optional[str]:
+        """Suggest which agent should handle follow-up questions"""
+        pass
+```
+
+---
+
+## 5. PORTFOLIO ANALYSIS AGENT (`src/agents/portfolio_agent.py`)
+
+### Prompt for :
+```python
+# Create a sophisticated Portfolio Analysis Agent
+# Analyze portfolio data, calculate key metrics, provide recommendations
+# Handle multiple input formats (CSV, manual entry, JSON)
+# Generate comprehensive portfolio reports with visualizations data
+
+import pandas as pd
+from typing import Dict, Any, List, Optional
+from src.agents.base_agent import BaseFinanceAgent
+from src.utils.portfolio_calc import PortfolioCalculator
+from src.core.state import FinanceAssistantState
+
+class PortfolioAnalysisAgent(BaseFinanceAgent):
+    """
+    Portfolio Analysis Agent for investment portfolio evaluation
+    
+    Capabilities:
+    - Parse and validate portfolio data from multiple formats
+    - Calculate key metrics: allocation, diversification, risk, expense ratios
+    - Provide actionable recommendations for portfolio improvement
+    - Generate visualization data for charts and graphs
+    - Assess portfolio against common benchmarks and best practices
+    """
+    
+    def __init__(self, llm, portfolio_calculator: PortfolioCalculator):
+        system_prompt = """
+        You are an expert portfolio analyst. Your role is to:
+        1. Analyze investment portfolios objectively and comprehensively
+        2. Calculate and explain key portfolio metrics clearly
+        3. Provide actionable recommendations for improvement
+        4. Explain complex concepts in beginner-friendly terms
+        5. Focus on diversification, risk management, and cost efficiency
+        
+        Analysis Framework:
+        - Asset allocation and diversification analysis
+        - Cost analysis (expense ratios, fees)
+        - Risk assessment based on asset classes
+        - Benchmark comparisons where appropriate
+        - Specific, actionable recommendations
+        
+        Always include appropriate disclaimers about investment advice.
+        """
+        super().__init__(llm, [], "portfolio_analysis", system_prompt)
+        self.calculator = portfolio_calculator
+    
+    def execute(self, state: FinanceAssistantState) -> Dict[str, Any]:
+        """
+        Analyze portfolio and provide comprehensive report
+        
+        Steps:
+        1. Extract and validate portfolio data from state
+        2. Calculate key portfolio metrics and ratios
+        3. Perform diversification and risk analysis
+        4. Generate recommendations based on analysis
+        5. Prepare visualization data for charts
+        6. Format comprehensive response
+        """
+        portfolio_data = state.get("portfolio_data")
+        
+        if not portfolio_data:
+            return self._request_portfolio_data()
+        
+        # Calculate portfolio metrics
+        metrics = self.calculator.calculate_all_metrics(portfolio_data)
+        
+        # Perform analysis
+        analysis = self._analyze_portfolio(metrics, portfolio_data)
+        
+        # Generate recommendations
+        recommendations = self._generate_recommendations(analysis)
+        
+        # Prepare visualization data
+        viz_data = self._prepare_visualization_data(portfolio_data, metrics)
+        
+        return {
+            "agent_response": self._format_portfolio_report(analysis, recommendations),
+            "portfolio_metrics": metrics,
+            "recommendations": recommendations,
+            "visualization_data": viz_data,
+            "sources": ["Portfolio analysis calculations", "Modern Portfolio Theory"],
+            "confidence": 0.9,
+            "next_agent": self._suggest_follow_up_agent(analysis)
+        }
+    
+    def _analyze_portfolio(self, metrics: Dict, portfolio_data: Dict) -> Dict[str, Any]:
+        """
+        Comprehensive portfolio analysis including:
+        - Asset allocation analysis
+        - Diversification assessment
+        - Risk evaluation
+        - Cost analysis
+        - Benchmark comparison
+        """
+        pass
+    
+    def _generate_recommendations(self, analysis: Dict) -> List[Dict[str, Any]]:
+        """
+        Generate specific, actionable portfolio recommendations
+        Prioritize by impact and ease of implementation
+        """
+        pass
+    
+    def _prepare_visualization_data(self, portfolio_data: Dict, metrics: Dict) -> Dict[str, Any]:
+        """
+        Prepare data structures for Streamlit visualizations:
+        - Pie chart data for allocation
+        - Bar chart data for sectors/regions
+        - Metrics table data
+        """
+        pass
+    
+    def parse_portfolio_input(self, input_data: Any) -> Dict[str, Any]:
+        """
+        Parse portfolio data from various input formats:
+        - CSV files with ticker symbols and quantities
+        - Manual entry with asset names and values
+        - JSON structured data
+        """
+        pass
+```
+
+---
+
+## 6. MARKET ANALYSIS AGENT (`src/agents/market_agent.py`)
+
+### Prompt for :
+```python
+# Create a Market Analysis Agent with Alpha Vantage integration
+# Fetch real-time market data, analyze trends, provide market insights
+# Implement caching strategy and error handling for API failures
+# Generate market summaries and stock analysis
+
+import requests
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
+from src.agents.base_agent import BaseFinanceAgent
+from src.data.market_data import MarketDataProvider
+from src.core.state import FinanceAssistantState
+
+class MarketAnalysisAgent(BaseFinanceAgent):
+    """
+    Market Analysis Agent for real-time market data and insights
+    
+    Capabilities:
+    - Fetch real-time stock quotes and market indices
+    - Analyze market trends and provide insights
+    - Generate market summaries and sector analysis
+    - Handle individual stock analysis and comparisons
+    - Provide market context for investment decisions
+    """
+    
+    def __init__(self, llm, market_provider: MarketDataProvider):
+        system_prompt = """
+        You are a market analysis expert. Your role is to:
+        1. Provide current market data and analysis in clear, actionable terms
+        2. Explain market movements and trends for beginners
+        3. Offer context for market conditions without predicting future prices
+        4. Help users understand how market conditions might affect their goals
+        5. Focus on factual analysis rather than speculation
+        
+        Analysis Framework:
+        - Current market conditions and recent trends
+        - Sector and industry analysis
+        - Individual stock fundamentals when requested
+        - Market context for portfolio decisions
+        - Risk factors and market volatility discussion
+        
+        Always include disclaimers about market volatility and investment risks.
+        """
+        super().__init__(llm, [], "market_analysis", system_prompt)
+        self.market_provider = market_provider
+    
+    def execute(self, state: FinanceAssistantState) -> Dict[str, Any]:
+        """
+        Analyze market conditions and provide insights
+        
+        Steps:
+        1. Parse market-related query from user input
+        2. Fetch relevant market data with caching
+        3. Analyze trends and market conditions
+        4. Generate insights and context
+        5. Prepare market data for visualization
+        """
+        query = state["user_query"]
+        
+        # Parse market query
+        market_request = self._parse_market_query(query)
+        
+        # Fetch market data
+        market_data = self._fetch_market_data(market_request)
+        
+        # Analyze market conditions
+        analysis = self._analyze_market_data(market_data, market_request)
+        
+        # Generate insights
+        insights = self._generate_market_insights(analysis, query)
+        
+        return {
+            "agent_response": insights["response"],
+            "market_data": market_data,
+            "analysis": analysis,
+            "visualization_data": self._prepare_market_viz_data(market_data),
+            "sources": ["Alpha Vantage API", "Market analysis"],
+            "confidence": insights["confidence"],
+            "cache_timestamp": datetime.now().isoformat()
+        }
+    
+    def _parse_market_query(self, query: str) -> Dict[str, Any]:
+        """
+        Parse user query to identify:
+        - Specific stocks or indices requested
+        - Type of analysis needed (quote, trends, comparison)
+        - Time frame for analysis
+        """
+        pass
+    
+    def _fetch_market_data(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Fetch market data with intelligent caching
+        Handle API rate limits and failures gracefully
+        """
+        pass
+    
+    def _analyze_market_data(self, data: Dict, request: Dict) -> Dict[str, Any]:
+        """
+        Analyze market data for trends, volatility, and key metrics
+        Calculate technical indicators and market statistics
+        """
+        pass
+    
+    def _generate_market_insights(self, analysis: Dict, original_query: str) -> Dict[str, Any]:
+        """
+        Generate human-readable market insights using LLM
+        Focus on educational content and context
+        """
+        pass
+    
+    def get_market_overview(self) -> Dict[str, Any]:
+        """Get general market overview for dashboard display"""
+        pass
+```
+
+---
+
+## 7. GOAL PLANNING AGENT (`src/agents/goal_agent.py`)
+
+### Prompt for :
+```python
+# Create a Goal Planning Agent for financial goal setting and tracking
+# Calculate time-value-of-money scenarios, retirement planning, savings goals
+# Generate projection charts and actionable savings plans
+# Integrate with portfolio data for goal-based recommendations
+
+from typing import Dict, Any, List
+from datetime import datetime, timedelta
+import numpy as np
+from src.agents.base_agent import BaseFinanceAgent
+from src.utils.portfolio_calc import FinancialCalculator
+from src.core.state import FinanceAssistantState
+
+class GoalPlanningAgent(BaseFinanceAgent):
+    """
+    Goal Planning Agent for financial goal setting and tracking
+    
+    Capabilities:
+    - Help users set realistic financial goals with timelines
+    - Calculate required savings rates and investment returns
+    - Generate multiple scenarios (conservative, moderate, aggressive)
+    - Provide actionable steps to achieve goals
+    - Track progress against established goals
+    """
+    
+    def __init__(self, llm, financial_calculator: FinancialCalculator):
+        system_prompt = """
+        You are a financial planning expert focused on goal-based investing. Your role is to:
+        1. Help users define clear, achievable financial goals
+        2. Calculate realistic timelines and savings requirements
+        3. Provide multiple scenario projections with different assumptions
+        4. Break down complex goals into actionable monthly/yearly steps
+        5. Adjust plans based on user circumstances and risk tolerance
+        
+        Planning Framework:
+        - Goal definition and timeline establishment
+        - Current situation assessment
+        - Required savings rate calculations
+        - Risk tolerance and investment strategy alignment
+        - Regular progress tracking and plan adjustments
+        
+        Focus on realistic, achievable plans with built-in flexibility.
+        """
+        super().__init__(llm, [], "goal_planning", system_prompt)
+        self.calculator = financial_calculator
+    
+    def execute(self, state: FinanceAssistantState) -> Dict[str, Any]:
+        """
+        Process goal planning request and generate comprehensive plan
+        
+        Steps:
+        1. Extract goal details from user query
+        2. Assess current financial situation from state
+        3. Calculate multiple projection scenarios
+        4. Generate actionable savings plan
+        5. Prepare visualization data for goal tracking
+        """
+        query = state["user_query"]
+        portfolio_data = state.get("portfolio_data")
+        existing_goals = state.get("investment_goals", [])
+        
+        # Parse goal request
+        goal_details = self._parse_goal_request(query)
+        
+        # Calculate scenarios
+        scenarios = self._calculate_goal_scenarios(goal_details, portfolio_data)
+        
+        # Generate action plan
+        action_plan = self._create_action_plan(scenarios, goal_details)
+        
+        # Prepare tracking data
+        tracking_data = self._prepare_goal_tracking(scenarios, goal_details)
+        
+        return {
+            "agent_response": self._format_goal_plan(scenarios, action_plan),
+            "goal_scenarios": scenarios,
+            "action_plan": action_plan,
+            "tracking_data": tracking_data,
+            "visualization_data": self._prepare_goal_viz_data(scenarios),
+            "sources": ["Financial planning calculations", "Time-value-of-money principles"],
+            "confidence": 0.85
+        }
+    
+    def _parse_goal_request(self, query: str) -> Dict[str, Any]:
+        """
+        Extract goal details from user query:
+        - Goal type (retirement, house, education, emergency fund)
+        - Target amount and timeline
+        - Current savings and income
+        - Risk tolerance preferences
+        """
+        pass
+    
+    def _calculate_goal_scenarios(self, goal_details: Dict, portfolio_data: Dict) -> Dict[str, Any]:
+        """
+        Calculate multiple scenarios with different assumptions:
+        - Conservative (3-4% returns)
+        - Moderate (6-7% returns)
+        - Aggressive (8-10% returns)
+        Include sensitivity analysis for different contribution amounts
+        """
+        pass
+    
+    def _create_action_plan(self, scenarios: Dict, goal_details: Dict) -> List[Dict[str, Any]]:
+        """
+        Generate specific, actionable steps:
+        - Monthly savings targets
+        - Investment allocation recommendations
+        - Timeline milestones
+        - Adjustment triggers
+        """
+        pass
+    
+    def _prepare_goal_viz_data(self, scenarios: Dict) -> Dict[str, Any]:
+        """
+        Prepare data for goal visualization charts:
+        - Projection line charts
+        - Savings requirement comparisons
+        - Progress tracking elements
+        """
+        pass
+    
+    def assess_goal_feasibility(self, goal_amount: float, timeline_years: int, current_savings: float, monthly_capacity: float) -> Dict[str, Any]:
+        """Assess whether a goal is realistic given current circumstances"""
+        pass
+```
+
+---
+
+## 8. LANGGRAPH WORKFLOW (`src/core/workflow.py`)
+
+### Prompt for :
+```python
+# Create a comprehensive LangGraph workflow for multi-agent orchestration
+# Include query routing, agent execution, state management, error handling
+# Implement conversation flow and agent handoff logic
+
+from typing import Dict, Any, List
+from langgraph import StateGraph, END
+from langgraph.prebuilt import ToolExecutor
+from src.core.state import FinanceAssistantState
+from src.agents.finance_qa_agent import FinanceQAAgent
+from src.agents.portfolio_agent import PortfolioAnalysisAgent
+from src.agents.market_agent import MarketAnalysisAgent
+from src.agents.goal_agent import GoalPlanningAgent
+
+class FinanceAssistantWorkflow:
+    """
+    LangGraph workflow orchestrator for multi-agent finance assistant
+    
+    Features:
+    - Intelligent query routing based on intent classification
+    - State management across agent interactions
+    - Error handling and fallback mechanisms
+    - Conversation flow control and agent handoffs
+    - Context preservation and memory management
+    """
+    
+    def __init__(self, agents: Dict[str, Any]):
+        self.agents = agents
+        self.graph = self._build_graph()
+    
+    def _build_graph(self) -> StateGraph:
+        """
+        Build the LangGraph workflow with nodes and edges
+        
+        Workflow:
+        1. START -> Query Router
+        2. Query Router -> Appropriate Agent(s)
+        3. Agent execution with state updates
+        4. Response formatting and context update
+        5. END or continue to next agent
+        """
+        workflow = StateGraph(FinanceAssistantState)
+        
+        # Add nodes
+        workflow.add_node("query_router", self._route_query)
+        workflow.add_node("finance_qa", self._execute_finance_qa)
+        workflow.add_node("portfolio_analysis", self._execute_portfolio_analysis)
+        workflow.add_node("market_analysis", self._execute_market_analysis)
+        workflow.add_node("goal_planning", self._execute_goal_planning)
+        workflow.add_node("response_formatter", self._format_final_response)
+        workflow.add_node("error_handler", self._handle_errors)
+        
+        # Define edges and conditional routing
+        workflow.set_entry_point("query_router")
+        
+        workflow.add_conditional_edges(
+            "query_router",
+            self._determine_next_agent,
+            {
+                "finance_qa": "finance_qa",
+                "portfolio_analysis": "portfolio_analysis",
+                "market_analysis": "market_analysis",
+                "goal_planning": "goal_planning",
+                "error": "error_handler"
+            }
+        )
+        
+        # Agent completion edges
+        for agent_name in ["finance_qa", "portfolio_analysis", "market_analysis", "goal_planning"]:
+            workflow.add_conditional_edges(
+                agent_name,
+                self._check_completion,
+                {
+                    "continue": "response_formatter",
+                    "handoff": "query_router",
+                    "end": END
+                }
+            )
+        
+        workflow.add_edge("response_formatter", END)
+        workflow.add_edge("error_handler", END)
+        
+        return workflow.compile()
+    
+    def _route_query(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """
+        Analyze user query and determine which agent should handle it
+        Use intent classification and keyword analysis
+        """
+        query = state["user_query"].lower()
+        
+        # Intent classification logic
+        if self._is_portfolio_query(query):
+            state["current_agent"] = "portfolio_analysis"
+        elif self._is_market_query(query):
+            state["current_agent"] = "market_analysis"
+        elif self._is_goal_query(query):
+            state["current_agent"] = "goal_planning"
+        else:
+            state["current_agent"] = "finance_qa"
+        
+        state["timestamp"] = datetime.now()
+        return state
+    
+    def _is_portfolio_query(self, query: str) -> bool:
+        """Detect portfolio-related queries"""
+        portfolio_keywords = [
+            "portfolio", "allocation", "diversification", "holdings",
+            "analyze my", "balance", "stocks", "bonds", "etf"
+        ]
+        return any(keyword in query for keyword in portfolio_keywords)
+    
+    def _is_market_query(self, query: str) -> bool:
+        """Detect market-related queries"""
+        market_keywords = [
+            "market", "stock price", "ticker", "trend", "performance",
+            "index", "nasdaq", "s&p", "dow", "quote"
+        ]
+        return any(keyword in query for keyword in market_keywords)
+    
+    def _is_goal_query(self, query: str) -> bool:
+        """Detect goal-planning queries"""
+        goal_keywords = [
+            "goal", "retirement", "save", "plan", "target",
+            "future", "timeline", "achieve", "house", "education"
+        ]
+        return any(keyword in query for keyword in goal_keywords)
+    
+    def _execute_finance_qa(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """Execute Finance Q&A agent"""
+        try:
+            result = self.agents["finance_qa"].execute(state)
+            self._update_state_with_agent_response(state, result, "finance_qa")
+        except Exception as e:
+            state["error_context"] = {"agent": "finance_qa", "error": str(e)}
+        return state
+    
+    def _execute_portfolio_analysis(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """Execute Portfolio Analysis agent"""
+        try:
+            result = self.agents["portfolio_analysis"].execute(state)
+            self._update_state_with_agent_response(state, result, "portfolio_analysis")
+        except Exception as e:
+            state["error_context"] = {"agent": "portfolio_analysis", "error": str(e)}
+        return state
+    
+    def _execute_market_analysis(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """Execute Market Analysis agent"""
+        try:
+            result = self.agents["market_analysis"].execute(state)
+            self._update_state_with_agent_response(state, result, "market_analysis")
+        except Exception as e:
+            state["error_context"] = {"agent": "market_analysis", "error": str(e)}
+        return state
+    
+    def _execute_goal_planning(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """Execute Goal Planning agent"""
+        try:
+            result = self.agents["goal_planning"].execute(state)
+            self._update_state_with_agent_response(state, result, "goal_planning")
+        except Exception as e:
+            state["error_context"] = {"agent": "goal_planning", "error": str(e)}
+        return state
+    
+    def _update_state_with_agent_response(self, state: FinanceAssistantState, result: Dict[str, Any], agent_name: str):
+        """Update state with agent response and metadata"""
+        state["agent_responses"].append({
+            "agent": agent_name,
+            "response": result.get("agent_response", ""),
+            "timestamp": datetime.now().isoformat(),
+            "confidence": result.get("confidence", 0.0),
+            "sources": result.get("sources", [])
+        })
+        
+        # Update specific state fields based on agent type
+        if agent_name == "portfolio_analysis" and "portfolio_metrics" in result:
+            state["portfolio_analysis"] = result
+        elif agent_name == "market_analysis" and "market_data" in result:
+            state["market_context"] = result
+    
+    def _determine_next_agent(self, state: FinanceAssistantState) -> str:
+        """Determine which agent should execute next"""
+        if state.get("error_context"):
+            return "error"
+        return state.get("current_agent", "finance_qa")
+    
+    def _check_completion(self, state: FinanceAssistantState) -> str:
+        """Check if workflow should continue, handoff, or end"""
+        last_response = state["agent_responses"][-1] if state["agent_responses"] else {}
+        
+        # Check if agent suggests handoff to another agent
+        if last_response.get("next_agent"):
+            state["current_agent"] = last_response["next_agent"]
+            return "handoff"
+        
+        # Check if user query is fully addressed
+        confidence = last_response.get("confidence", 0.0)
+        if confidence > 0.8:
+            return "end"
+        
+        return "continue"
+    
+    def _format_final_response(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """Format final response for user interface"""
+        responses = state["agent_responses"]
+        if not responses:
+            return state
+        
+        latest_response = responses[-1]
+        state["conversation_history"].append({
+            "user": state["user_query"],
+            "assistant": latest_response["response"],
+            "agent": latest_response["agent"],
+            "timestamp": latest_response["timestamp"],
+            "sources": latest_response.get("sources", [])
+        })
+        
+        return state
+    
+    def _handle_errors(self, state: FinanceAssistantState) -> FinanceAssistantState:
+        """Handle errors gracefully with fallback responses"""
+        error_context = state.get("error_context", {})
+        agent_name = error_context.get("agent", "unknown")
+        error_msg = error_context.get("error", "Unknown error")
+        
+        fallback_response = f"""
+        I apologize, but I encountered an issue while processing your request. 
+        Let me provide some general guidance instead.
+        
+        If you were asking about:
+        - Basic financial concepts: I can explain investment fundamentals
+        - Portfolio analysis: Please ensure your data is in the correct format
+        - Market information: Please try again or ask about general market concepts
+        - Financial goals: I can help you understand goal-setting principles
+        
+        Please rephrase your question and I'll do my best to help.
+        """
+        
+        state["agent_responses"].append({
+            "agent": "error_handler",
+            "response": fallback_response,
+            "timestamp": datetime.now().isoformat(),
+            "confidence": 0.5,
+            "error": True
+        })
+        
+        return state
+
+    def run(self, user_query: str, session_state: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Run the complete workflow for a user query"""
+        initial_state = FinanceAssistantState(
+            user_query=user_query,
+            conversation_history=session_state.get("conversation_history", []) if session_state else [],
+            current_agent=None,
+            portfolio_data=session_state.get("portfolio_data") if session_state else None,
+            portfolio_analysis=None,
+            market_context=session_state.get("market_context") if session_state else None,
+            market_cache=session_state.get("market_cache", {}) if session_state else {},
+            agent_responses=[],
+            rag_context=[],
+            risk_tolerance=session_state.get("risk_tolerance") if session_state else None,
+            investment_goals=session_state.get("investment_goals", []) if session_state else [],
+            user_profile=session_state.get("user_profile", {}) if session_state else {},
+            session_id=session_state.get("session_id", f"session_{datetime.now().timestamp()}") if session_state else f"session_{datetime.now().timestamp()}",
+            timestamp=datetime.now(),
+            error_context=None
+        )
+        
+        # Execute workflow
+        final_state = self.graph.invoke(initial_state)
+        
+        return {
+            "response": final_state["agent_responses"][-1]["response"] if final_state["agent_responses"] else "I couldn't process your request.",
+            "agent": final_state["agent_responses"][-1]["agent"] if final_state["agent_responses"] else "unknown",
+            "sources": final_state["agent_responses"][-1].get("sources", []) if final_state["agent_responses"] else [],
+            "updated_state": final_state,
+            "conversation_history": final_state["conversation_history"]
+        }
+```
+
+---
+
+## 9. RAG SYSTEM IMPLEMENTATION
+
+### Vector Store (`src/rag/vector_store.py`)
+
+```python
+# Create a comprehensive FAISS vector store for financial knowledge base
+# Include document chunking, embedding generation, similarity search
+# Support for metadata filtering and source attribution
+
+import faiss
+import numpy as np
+import pickle
+from typing import List, Dict, Any, Optional
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.schema import Document
+import os
+
+class FinanceVectorStore:
+    """
+    FAISS-based vector store for financial knowledge base
+    
+    Features:
+    - Document chunking with overlap for context preservation
+    - OpenAI embeddings for semantic similarity
+    - Metadata storage for source attribution
+    - Efficient similarity search with filtering
+    - Persistence and loading of index
+    """
+    
+    def __init__(self, embedding_model: str = "text-embedding-ada-002", index_path: str = "data/faiss_index"):
+        self.embeddings = OpenAIEmbeddings(model=embedding_model)
+        self.index_path = index_path
+        self.index = None
+        self.documents = []
+        self.metadata = []
+        
+        # Text splitter for chunking
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=50,
+            separators=["\n\n", "\n", ". ", " ", ""]
+        )
+        
+        # Load existing index if available
+        self._load_index()
+    
+    def add_documents(self, documents: List[Document]) -> None:
+        """
+        Add documents to the vector store
+        
+        Steps:
+        1. Chunk documents into smaller pieces
+        2. Generate embeddings for each chunk
+        3. Add to FAISS index with metadata
+        4. Save updated index
+        """
+        # Chunk all documents
+        chunks = []
+        chunk_metadata = []
+        
+        for doc in documents:
+            doc_chunks = self.text_splitter.split_text(doc.page_content)
+            for i, chunk in enumerate(doc_chunks):
+                chunks.append(chunk)
+                chunk_metadata.append({
+                    "source": doc.metadata.get("source", "unknown"),
+                    "category": doc.metadata.get("category", "general"),
+                    "chunk_id": f"{doc.metadata.get('source', 'unknown')}_{i}",
+                    "original_doc_id": doc.metadata.get("doc_id", "unknown")
+                })
+        
+        # Generate embeddings
+        embeddings = self.embeddings.embed_documents(chunks)
+        embeddings_array = np.array(embeddings).astype('float32')
+        
+        # Create or update FAISS index
+        if self.index is None:
+            dimension = embeddings_array.shape[1]
+            self.index = faiss.IndexFlatIP(dimension)  # Inner product for similarity
+        
+        # Normalize embeddings for cosine similarity
+        faiss.normalize_L2(embeddings_array)
+        
+        # Add to index
+        self.index.add(embeddings_array)
+        
+        # Store documents and metadata
+        self.documents.extend(chunks)
+        self.metadata.extend(chunk_metadata)
+        
+        # Save index
+        self._save_index()
+    
+    def similarity_search(self, query: str, k: int = 5, category_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+        """
+        Perform similarity search with optional category filtering
+        
+        Returns list of documents with scores and metadata
+        """
+        if self.index is None:
+            return []
+        
+        # Generate query embedding
+        query_embedding = self.embeddings.embed_query(query)
+        query_vector = np.array([query_embedding]).astype('float32')
+        faiss.normalize_L2(query_vector)
+        
+        # Search
+        scores, indices = self.index.search(query_vector, k * 2)  # Get more results for filtering
+        
+        results = []
+        for score, idx in zip(scores[0], indices[0]):
+            if idx >= len(self.documents):
+                continue
+                
+            metadata = self.metadata[idx]
+            
+            # Apply category filter if specified
+            if category_filter and metadata.get("category") != category_filter:
+                continue
+            
+            results.append({
+                "content": self.documents[idx],
+                "score": float(score),
+                "metadata": metadata,
+                "source": metadata.get("source", "unknown")
+            })
+            
+            if len(results) >= k:
+                break
+        
+        return results
+    
+    def _save_index(self) -> None:
+        """Save FAISS index and metadata to disk"""
+        os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
+        
+        if self.index is not None:
+            faiss.write_index(self.index, f"{self.index_path}.faiss")
+        
+        with open(f"{self.index_path}_docs.pkl", "wb") as f:
+            pickle.dump(self.documents, f)
+            
+        with open(f"{self.index_path}_metadata.pkl", "wb") as f:
+            pickle.dump(self.metadata, f)
+    
+    def _load_index(self) -> None:
+        """Load existing FAISS index and metadata from disk"""
+        try:
+            if os.path.exists(f"{self.index_path}.faiss"):
+                self.index = faiss.read_index(f"{self.index_path}.faiss")
+                
+            if os.path.exists(f"{self.index_path}_docs.pkl"):
+                with open(f"{self.index_path}_docs.pkl", "rb") as f:
+                    self.documents = pickle.load(f)
+                    
+            if os.path.exists(f"{self.index_path}_metadata.pkl"):
+                with open(f"{self.index_path}_metadata.pkl", "rb") as f:
+                    self.metadata = pickle.load(f)
+        except Exception as e:
+            print(f"Error loading index: {e}")
+            self.index = None
+            self.documents = []
+            self.metadata = []
+```
+
+### Retriever (`src/rag/retriever.py`)
+
+```python
+# Create an intelligent retriever that combines vector search with reranking
+# Include query enhancement and context building for better LLM responses
+
+from typing import List, Dict, Any, Optional
+from src.rag.vector_store import FinanceVectorStore
+
+class FinanceRetriever:
+    """
+    Intelligent retriever for financial knowledge base
+    
+    Features:
+    - Multi-stage retrieval with reranking
+    - Query enhancement and expansion
+    - Context building for LLM consumption
+    - Source diversity for comprehensive answers
+    """
+    
+    def __init__(self, vector_store: FinanceVectorStore):
+        self.vector_store = vector_store
+        
+        # Financial domain keywords for query enhancement
+        self.domain_keywords = {
+            "investment": ["stocks", "bonds", "ETFs", "mutual funds", "portfolio"],
+            "retirement": ["401k", "IRA", "pension", "social security"],
+            "risk": ["volatility", "diversification", "asset allocation"],
+            "analysis": ["valuation", "ratios", "performance", "metrics"]
+        }
+    
+    def retrieve(self, query: str, k: int = 5, enhance_query: bool = True) -> List[Dict[str, Any]]:
+        """
+        Retrieve relevant documents with optional query enhancement
+        
+        Steps:
+        1. Enhance query with domain-specific terms
+        2. Perform vector similarity search
+        3. Rerank results for relevance and diversity
+        4. Format results for LLM consumption
+        """
+        # Enhance query if requested
+        if enhance_query:
+            enhanced_query = self._enhance_query(query)
+        else:
+            enhanced_query = query
+        
+        # Retrieve candidates
+        candidates = self.vector_store.similarity_search(enhanced_query, k=k*2)
+        
+        # Rerank for diversity and relevance
+        final_results = self._rerank_results(candidates, query, k)
+        
+        return final_results
+    
+    def retrieve_by_category(self, query: str, category: str, k: int = 3) -> List[Dict[str, Any]]:
+        """Retrieve documents filtered by category"""
+        return self.vector_store.similarity_search(query, k=k, category_filter=category)
+    
+    def build_context(self, query: str, retrieved_docs: List[Dict[str, Any]]) -> str:
+        """
+        Build comprehensive context for LLM from retrieved documents
+        
+        Format:
+        - Combine relevant chunks with source attribution
+        - Maintain logical flow and remove redundancy
+        - Include confidence indicators
+        """
+        if not retrieved_docs:
+            return "No relevant information found in knowledge base."
+        
+        context_parts = []
+        seen_sources = set()
+        
+        context_parts.append(f"Based on the following information relevant to: '{query}'\n")
+        
+        for i, doc in enumerate(retrieved_docs):
+            source = doc["metadata"]["source"]
+            content = doc["content"]
+            score = doc["score"]
+            
+            # Add source diversity
+            if source not in seen_sources or score > 0.8:
+                context_parts.append(f"\n[Source {i+1}: {source}]")
+                context_parts.append(content)
+                seen_sources.add(source)
+        
+        context_parts.append("\nPlease provide a comprehensive answer based on this information, citing the relevant sources.")
+        
+        return "\n".join(context_parts)
+    
+    def _enhance_query(self, query: str) -> str:
+        """
+        Enhance query with domain-specific terms and synonyms
+        """
+        enhanced_terms = []
+        query_lower = query.lower()
+        
+        # Add related financial terms
+        for category, keywords in self.domain_keywords.items():
+            if any(keyword in query_lower for keyword in keywords):
+                enhanced_terms.extend(keywords[:2])  # Add top 2 related terms
+        
+        # Combine original query with enhancements
+        if enhanced_terms:
+            return f"{query} {' '.join(set(enhanced_terms))}"
+        
+        return query
+    
+    def _rerank_results(self, candidates: List[Dict[str, Any]], original_query: str, k: int) -> List[Dict[str, Any]]:
+        """
+        Rerank results for relevance and source diversity
+        
+        Factors:
+        - Similarity score
+        - Source diversity
+        - Content quality indicators
+        """
+        if not candidates:
+            return []
+        
+        # Score each candidate
+        scored_candidates = []
+        source_counts = {}
+        
+        for candidate in candidates:
+            source = candidate["metadata"]["source"]
+            source_counts[source] = source_counts.get(source, 0) + 1
+            
+            # Calculate rerank score
+            similarity_score = candidate["score"]
+            diversity_bonus = 1.0 / source_counts[source]  # Favor diverse sources
+            content_length_score = min(len(candidate["content"]) / 500, 1.0)  # Favor substantial content
+            
+            final_score = similarity_score * 0.7 + diversity_bonus * 0.2 + content_length_score * 0.1
+            
+            scored_candidates.append({
+                **candidate,
+                "rerank_score": final_score
+            })
+        
+        # Sort by rerank score and return top k
+        scored_candidates.sort(key=lambda x: x["rerank_score"], reverse=True)
+        return scored_candidates[:k]
+```
+
+---
+
+## 10. STREAMLIT WEB INTERFACE
+
+### Main App (`src/web_app/main.py`)
+
+```python
+# Create the main Streamlit application with multi-tab interface
+# Include session state management, workflow integration, error handling
+
+import streamlit as st
+from typing import Dict, Any
+import pandas as pd
+from datetime import datetime
+
+from src.core.workflow import FinanceAssistantWorkflow
+from src.web_app.chat_tab import render_chat_tab
+from src.web_app.portfolio_tab import render_portfolio_tab
+from src.web_app.market_tab import render_market_tab
+from src.web_app.goals_tab import render_goals_tab
+
+class FinanceAssistantApp:
+    """
+    Main Streamlit application for AI Finance Assistant
+    
+    Features:
+    - Multi-tab interface with seamless navigation
+    - Session state management across tabs
+    - Integration with LangGraph workflow
+    - Error handling and user feedback
+    - Responsive design for different screen sizes
+    """
+    
+    def __init__(self):
+        self.setup_page_config()
+        self.initialize_session_state()
+        self.workflow = self.load_workflow()
+    
+    def setup_page_config(self):
+        """Configure Streamlit page settings"""
+        st.set_page_config(
+            page_title="AI Finance Assistant",
+            page_icon="🏦",
+            layout="wide",
+            initial_sidebar_state="collapsed"
+        )
+        
+        # Custom CSS for better styling
+        st.markdown("""
+        <style>
+        .main-header {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1f77b4;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .tab-content {
+            padding: 1rem;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            margin-top: 1rem;
+        }
+        
+        .agent-response {
+            background-color: #e3f2fd;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #1976d2;
+            margin: 1rem 0;
+        }
+        
+        .error-message {
+            background-color: #ffebee;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #d32f2f;
+            color: #d32f2f;
+        }
+        
+        .success-message {
+            background-color: #e8f5e8;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            color: #2e7d32;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    
+    def initialize_session_state(self):
+        """Initialize all session state variables"""
+        if "conversation_history" not in st.session_state:
+            st.session_state.conversation_history = []
+        
+        if "portfolio_data" not in st.session_state:
+            st.session_state.portfolio_data = None
+            
+        if "portfolio_analysis" not in st.session_state:
+            st.session_state.portfolio_analysis = None
+        
+        if "market_context" not in st.session_state:
+            st.session_state.market_context = None
+            
+        if "market_cache" not in st.session_state:
+            st.session_state.market_cache = {}
+        
+        if "investment_goals" not in st.session_state:
+            st.session_state.investment_goals = []
+        
+        if "user_profile" not in st.session_state:
+            st.session_state.user_profile = {}
+        
+        if "session_id" not in st.session_state:
+            st.session_state.session_id = f"session_{datetime.now().timestamp()}"
+        
+        if "current_tab" not in st.session_state:
+            st.session_state.current_tab = "Chat"
+    
+    def load_workflow(self) -> FinanceAssistantWorkflow:
+        """Initialize and load the LangGraph workflow"""
+        # This would be implemented to load your actual agents
+        # For now, return a placeholder
+        return None  # Replace with actual workflow initialization
+    
+    def run(self):
+        """Main application entry point"""
+        # Header
+        st.markdown('<h1 class="main-header">🏦 AI Finance Assistant</h1>', unsafe_allow_html=True)
+        st.markdown("Your intelligent companion for financial education and portfolio management")
+        
+        # Create tabs
+        tab1, tab2, tab3, tab4 = st.tabs([
+            "💬 Chat", 
+            "📊 Portfolio", 
+            "📈 Market", 
+            "🎯 Goals"
+        ])
+        
+        # Track current tab for cross-tab navigation
+        if st.session_state.get("switch_to_tab"):
+            tab_map = {"Chat": tab1, "Portfolio": tab2, "Market": tab3, "Goals": tab4}
+            target_tab = st.session_state.switch_to_tab
+            st.session_state.switch_to_tab = None
+            # Note: Streamlit doesn't support programmatic tab switching
+            # This is a placeholder for the intended functionality
+        
+        # Render tab contents
+        with tab1:
+            self.render_chat_tab()
+        
+        with tab2:
+            self.render_portfolio_tab()
+        
+        with tab3:
+            self.render_market_tab()
+        
+        with tab4:
+            self.render_goals_tab()
+        
+        # Sidebar with session info and quick actions
+        self.render_sidebar()
+    
+    def render_chat_tab(self):
+        """Render the chat interface tab"""
+        render_chat_tab(self.workflow, st.session_state)
+    
+    def render_portfolio_tab(self):
+        """Render the portfolio analysis tab"""
+        render_portfolio_tab(self.workflow, st.session_state)
+    
+    def render_market_tab(self):
+        """Render the market analysis tab"""
+        render_market_tab(self.workflow, st.session_state)
+    
+    def render_goals_tab(self):
+        """Render the goal planning tab"""
+        render_goals_tab(self.workflow, st.session_state)
+    
+    def render_sidebar(self):
+        """Render sidebar with session info and quick actions"""
+        with st.sidebar:
+            st.header("Session Info")
+            st.write(f"Session ID: {st.session_state.session_id[:8]}...")
+            st.write(f"Messages: {len(st.session_state.conversation_history)}")
+            
+            st.header("Quick Actions")
+            
+            if st.button("📤 Export Chat History"):
+                self.export_chat_history()
+            
+            if st.button("🗑️ Clear Session"):
+                self.clear_session()
+            
+            if st.session_state.portfolio_data:
+                st.success("✅ Portfolio Loaded")
+                if st.button("📊 View Portfolio Analysis"):
+                    st.session_state.switch_to_tab = "Portfolio"
+                    st.rerun()
+            
+            if st.session_state.investment_goals:
+                st.success(f"✅ {len(st.session_state.investment_goals)} Goals Set")
+                if st.button("🎯 View Goals"):
+                    st.session_state.switch_to_tab = "Goals"
+                    st.rerun()
+            
+            # System status
+            st.header("System Status")
+            st.write("🟢 AI Agents: Online")
+            st.write("🟢 Market Data: Connected")
+            st.write("🟢 Knowledge Base: Loaded")
+    
+    def export_chat_history(self):
+        """Export conversation history as downloadable file"""
+        if not st.session_state.conversation_history:
+            st.warning("No conversation history to export")
+            return
+        
+        # Convert to DataFrame for easy export
+        df = pd.DataFrame(st.session_state.conversation_history)
+        csv = df.to_csv(index=False)
+        
+        st.download_button(
+            label="Download Chat History",
+            data=csv,
+            file_name=f"finance_chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv"
+        )
+    
+    def clear_session(self):
+        """Clear all session state data"""
+        for key in list(st.session_state.keys()):
+            if key != "session_id":  # Keep session ID
+                del st.session_state[key]
+        
+        self.initialize_session_state()
+        st.success("Session cleared successfully!")
+        st.rerun()
+
+# Application entry point
+if __name__ == "__main__":
+    app = FinanceAssistantApp()
+    app.run()
+```
+
+### Chat Tab (`src/web_app/chat_tab.py`)
+
+```python
+# Create the chat interface tab with conversation history and agent indicators
+# Include message formatting, source citations, quick action buttons
+
+import streamlit as st
+from typing import Dict, Any, List
+from datetime import datetime
+
+def render_chat_tab(workflow, session_state: Dict[str, Any]):
+    """
+    Render the main chat interface
+    
+    Features:
+    - Conversation history display with agent indicators
+    - Message input with send functionality
+    - Source citations and confidence indicators
+    - Quick action buttons for common tasks
+    - Agent handoff notifications
+    """
+    
+    st.markdown('<div class="tab-content">', unsafe_allow_html=True)
+    
+    # Display conversation history
+    render_conversation_history(session_state.get("conversation_history", []))
+    
+    # Chat input area
+    render_chat_input(workflow, session_state)
+    
+    # Quick action buttons
+    render_quick_actions(workflow, session_state)
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def render_conversation_history(conversation_history: List[Dict[str, Any]]):
+    """Display formatted conversation history"""
+    
+    if not conversation_history:
+        st.info("👋 Welcome! I'm your AI Finance Assistant. Ask me anything about investing, portfolio analysis, market data, or financial planning.")
+        return
+    
+    # Create scrollable container for chat history
+    chat_container = st.container()
+    
+    with chat_container:
+        for message in conversation_history:
+            render_message(message)
+
+def render_message(message: Dict[str, Any]):
+    """Render individual message with proper formatting"""
+    
+    # User message
+    with st.chat_message("user"):
+        st.write(message["user"])
+    
+    # Assistant message with agent indicator
+    agent_name = message.get("agent", "assistant")
+    agent_icons = {
+        "finance_qa": "🎓",
+        "portfolio_analysis": "📊",
+        "market_analysis": "📈",
+        "goal_planning": "🎯"
+    }
+    
+    agent_icon = agent_icons.get(agent_name, "🤖")
+    
+    with st.chat_message("assistant"):
+        # Agent indicator
+        st.caption(f"{agent_icon} {agent_name.replace('_', ' ').title()} Agent")
+        
+        # Message content
+        st.write(message["assistant"])
+        
+        # Source citations if available
+        sources = message.get("sources", [])
+        if sources:
+            with st.expander("📚 Sources"):
+                for i, source in enumerate(sources, 1):
+                    st.write(f"{i}. {source}")
+        
+        # Timestamp
+        timestamp = message.get("timestamp")
+        if timestamp:
+            st.caption(f"⏰ {timestamp}")
+
+def render_chat_input(workflow, session_state: Dict[str, Any]):
+    """Render chat input area with send functionality"""
+    
+    # Create columns for input and send button
+    col1, col2 = st.columns([4, 1])
+    
+    with col1:
+        user_input = st.text_input(
+            "Ask me anything about finance...",
+            placeholder="e.g., 'How should I diversify my portfolio?' or 'What's the current market trend?'",
+            key="chat_input"
+        )
+    
+    with col2:
+        send_button = st.button("Send", type="primary", use_container_width=True)
+    
+    # Handle input submission
+    if send_button and user_input.strip():
+        process_user_input(user_input, workflow, session_state)
+        # Clear input after sending
+        st.session_state.chat_input = ""
+        st.rerun()
+    
+    # Handle Enter key submission
+    if user_input and st.session_state.get("submit_chat", False):
+        process_user_input(user_input, workflow, session_state)
+        st.session_state.chat_input = ""
+        st.session_state.submit_chat = False
+        st.rerun()
+
+def process_user_input(user_input: str, workflow, session_state: Dict[str, Any]):
+    """Process user input through the workflow"""
+    
+    if not workflow:
+        st.error("Workflow not initialized. Please check system configuration.")
+        return
+    
+    try:
+        with st.spinner("🤔 Thinking..."):
+            # Run workflow
+            result = workflow.run(user_input, session_state)
+            
+            # Update session state with results
+            session_state["conversation_history"] = result["conversation_history"]
+            if "updated_state" in result:
+                update_session_state(session_state, result["updated_state"])
+            
+            st.success("✅ Response generated!")
+            
+    except Exception as e:
+        st.error(f"❌ Error processing your request: {str(e)}")
+
+def update_session_state(session_state: Dict[str, Any], updated_state: Dict[str, Any]):
+    """Update session state with workflow results"""
+    
+    # Update portfolio data if available
+    if updated_state.get("portfolio_analysis"):
+        session_state["portfolio_analysis"] = updated_state["portfolio_analysis"]
+    
+    # Update market context
+    if updated_state.get("market_context"):
+        session_state["market_context"] = updated_state["market_context"]
+    
+    # Update goals
+    if updated_state.get("investment_goals"):
+        session_state["investment_goals"] = updated_state["investment_goals"]
+
+def render_quick_actions(workflow, session_state: Dict[str, Any]):
+    """Render quick action buttons for common tasks"""
+    
+    st.markdown("### Quick Actions")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        if st.button("📊 Analyze Portfolio", use_container_width=True):
+            if session_state.get("portfolio_data"):
+                process_user_input("Please analyze my current portfolio", workflow, session_state)
+            else:
+                st.info("Please upload your portfolio in the Portfolio tab first.")
+    
+    with col2:
+        if st.button("📈 Market Update", use_container_width=True):
+            process_user_input("What's the current market situation?", workflow, session_state)
+    
+    with col3:
+        if st.button("🎯 Set Goal", use_container_width=True):
+            process_user_input("I want to set a new financial goal", workflow, session_state)
+    
+    with col4:
+        if st.button("❓ Learn Basics", use_container_width=True):
+            process_user_input("Explain basic investment concepts for beginners", workflow, session_state)
+
+    # Sample questions for new users
+    if not session_state.get("conversation_history"):
+        st.markdown("### 💡 Try asking:")
+        sample_questions = [
+            "What is diversification and why is it important?",
+            "How do I start investing with $1000?",
+            "What's the difference between stocks and bonds?",
+            "How should I plan for retirement?"
+        ]
+        
+        for question in sample_questions:
+            if st.button(f"💬 {question}", key=f"sample_{hash(question)}"):
+                process_user_input(question, workflow, session_state)
+                st.rerun()
+```
+
+---
+
+## 11. REQUIREMENTS.TXT
+
+```txt
+# Core AI and LangChain
+langchain==0.1.0
+langgraph==0.0.26
+openai==1.12.0
+
+# Vector Database
+faiss-cpu==1.7.4
+sentence-transformers==2.2.2
+
+# Market Data
+yfinance==0.2.12
+alpha-vantage==2.3.1
+requests==2.31.0
+
+# Web Interface
+streamlit==1.31.0
+plotly==5.17.0
+matplotlib==3.8.2
+seaborn==0.13.0
+
+# Data Processing
+pandas==2.1.4
+numpy==1.24.3
+scipy==1.11.4
+
+# Utilities
+python-dotenv==1.0.0
+PyYAML==6.0.1
+pydantic==2.5.0
+typing-extensions==4.9.0
+
+# Testing (Optional)
+pytest==7.4.3
+pytest-asyncio==0.21.1
+```
+
+---
+
+## 12. MARKET DATA PROVIDER (`src/data/market_data.py`)
+
+```python
+# Create comprehensive market data provider with Alpha Vantage integration
+# Include caching, error handling, rate limiting, multiple data sources
+
+import requests
+import yfinance as yf
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
+import time
+import json
+from dataclasses import dataclass
+
+@dataclass
+class MarketDataConfig:
+    """Configuration for market data providers"""
+    alpha_vantage_key: str
+    cache_ttl: int = 1800  # 30 minutes
+    rate_limit_delay: float = 12.0  # Alpha Vantage free tier: 5 calls/minute
+    max_retries: int = 3
+
+class MarketDataProvider:
+    """
+    Comprehensive market data provider supporting multiple sources
+    
+    Features:
+    - Alpha Vantage API integration for real-time quotes
+    - yfinance fallback for historical data
+    - Intelligent caching with TTL
+    - Rate limiting and error handling
+    - Multiple data formats (quotes, historical, fundamentals)
+    """
+    
+    def __init__(self, config: MarketDataConfig):
+        self.config = config
+        self.cache = {}
+        self.last_api_call = {}
+        
+        # API endpoints
+        self.av_base_url = "https://www.alphavantage.co/query"
+    
+    def get_stock_quote(self, symbol: str) -> Dict[str, Any]:
+        """
+        Get real-time stock quote with caching
+        
+        Returns:
+        - Current price, change, volume
+        - Previous close, open, high, low
+        - Market cap and basic fundamentals
+        """
+        cache_key = f"quote_{symbol.upper()}"
+        
+        # Check cache first
+        if self._is_cached(cache_key):
+            return self.cache[cache_key]["data"]
+        
+        try:
+            # Try Alpha Vantage first
+            quote_data = self._get_av_quote(symbol)
+            
+            if quote_data and "error" not in quote_data:
+                self._cache_data(cache_key, quote_data)
+                return quote_data
+            
+            # Fallback to yfinance
+            quote_data = self._get_yf_quote(symbol)
+            self._cache_data(cache_key, quote_data)
+            return quote_data
+            
+        except Exception as e:
+            return {"error": f"Failed to fetch quote for {symbol}: {str(e)}"}
+    
+    def get_market_overview(self) -> Dict[str, Any]:
+        """
+        Get major market indices and overview
+        
+        Returns:
+        - Major indices (S&P 500, NASDAQ, Dow)
+        - Market sentiment indicators
+        - Sector performance
+        """
+        cache_key = "market_overview"
+        
+        if self._is_cached(cache_key):
+            return self.cache[cache_key]["data"]
+        
+        try:
+            overview_data = {}
+            
+            # Major indices
+            major_indices = ["^GSPC", "^IXIC", "^DJI", "^VIX"]
+            indices_data = {}
+            
+            for index in major_indices:
+                index_data = self._get_yf_quote(index)
+                if "error" not in index_data:
+                    indices_data[index] = index_data
+            
+            overview_data["indices"] = indices_data
+            overview_data["market_status"] = self._get_market_status()
+            overview_data["timestamp"] = datetime.now().isoformat()
+            
+            self._cache_data(cache_key, overview_data)
+            return overview_data
+            
+        except Exception as e:
+            return {"error": f"Failed to fetch market overview: {str(e)}"}
+    
+    def get_historical_data(self, symbol: str, period: str = "1mo") -> Dict[str, Any]:
+        """
+        Get historical price data for charting and analysis
+        
+        Args:
+            symbol: Stock symbol
+            period: Time period (1d, 5d, 1mo, 3mo, 6mo, 1y, 2y, 5y, 10y, ytd, max)
+        """
+        cache_key = f"historical_{symbol}_{period}"
+        
+        if self._is_cached(cache_key, ttl=3600):  # 1 hour cache for historical data
+            return self.cache[cache_key]["data"]
+        
+        try:
+            ticker = yf.Ticker(symbol)
+            hist = ticker.history(period=period)
+            
+            if hist.empty:
+                return {"error": f"No historical data found for {symbol}"}
+            
+            # Convert to JSON-serializable format
+            historical_data = {
+                "symbol": symbol.upper(),
+                "period": period,
+                "data": hist.reset_index().to_dict(orient="records"),
+                "summary": {
+                    "start_date": hist.index[0].isoformat(),
+                    "end_date": hist.index[-1].isoformat(),
+                    "total_return": ((hist['Close'][-1] / hist['Close'][0]) - 1) * 100,
+                    "volatility": hist['Close'].pct_change().std() * (252 ** 0.5) * 100  # Annualized
+                }
+            }
+            
+            self._cache_data(cache_key, historical_data, ttl=3600)
+            return historical_data
+            
+        except Exception as e:
+            return {"error": f"Failed to fetch historical data for {symbol}: {str(e)}"}
+    
+    def search_symbols(self, query: str) -> List[Dict[str, Any]]:
+        """
+        Search for stock symbols and company names
+        """
+        try:
+            # Use Alpha Vantage symbol search
+            if self._can_make_api_call("av"):
+                params = {
+                    "function": "SYMBOL_SEARCH",
+                    "keywords": query,
+                    "apikey": self.config.alpha_vantage_key
+                }
+                
+                response = requests.get(self.av_base_url, params=params)
+                data = response.json()
+                
+                if "bestMatches" in data:
+                    matches = []
+                    for match in data["bestMatches"][:10]:  # Limit to top 10
+                        matches.append({
+                            "symbol": match["1. symbol"],
+                            "name": match["2. name"],
+                            "type": match["3. type"],
+                            "region": match["4. region"],
+                            "currency": match["8. currency"]
+                        })
+                    return matches
+            
+            # Fallback: return empty list (could implement yfinance search here)
+            return []
+            
+        except Exception as e:
+            return []
+    
+    def _get_av_quote(self, symbol: str) -> Dict[str, Any]:
+        """Get quote from Alpha Vantage API"""
+        if not self._can_make_api_call("av"):
+            raise Exception("Rate limit exceeded for Alpha Vantage")
+        
+        params = {
+            "function": "GLOBAL_QUOTE",
+            "symbol": symbol,
+            "apikey": self.config.alpha_vantage_key
+        }
+        
+        response = requests.get(self.av_base_url, params=params)
+        data = response.json()
+        
+        self.last_api_call["av"] = time.time()
+        
+        if "Global Quote" in data:
+            quote = data["Global Quote"]
+            return {
+                "symbol": symbol.upper(),
+                "price": float(quote["05. price"]),
+                "change": float(quote["09. change"]),
+                "change_percent": quote["10. change percent"].rstrip('%'),
+                "volume": int(quote["06. volume"]),
+                "previous_close": float(quote["08. previous close"]),
+                "open": float(quote["02. open"]),
+                "high": float(quote["03. high"]),
+                "low": float(quote["04. low"]),
+                "source": "Alpha Vantage",
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {"error": "Invalid response from Alpha Vantage"}
+    
+    def _get_yf_quote(self, symbol: str) -> Dict[str, Any]:
+        """Get quote from yfinance (fallback)"""
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            
+            if not info or "regularMarketPrice" not in info:
+                return {"error": f"No data available for {symbol}"}
+            
+            return {
+                "symbol": symbol.upper(),
+                "price": info.get("regularMarketPrice", 0),
+                "change": info.get("regularMarketChange", 0),
+                "change_percent": info.get("regularMarketChangePercent", 0),
+                "volume": info.get("regularMarketVolume", 0),
+                "previous_close": info.get("regularMarketPreviousClose", 0),
+                "open": info.get("regularMarketOpen", 0),
+                "high": info.get("regularMarketDayHigh", 0),
+                "low": info.get("regularMarketDayLow", 0),
+                "market_cap": info.get("marketCap", 0),
+                "pe_ratio": info.get("trailingPE", 0),
+                "source": "Yahoo Finance",
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {"error": f"yfinance error: {str(e)}"}
+    
+    def _get_market_status(self) -> Dict[str, Any]:
+        """Determine if markets are open"""
+        now = datetime.now()
+        
+        # Simple market hours check (US markets)
+        # Note: This is simplified and doesn't account for holidays
+        weekday = now.weekday()  # 0=Monday, 6=Sunday
+        hour = now.hour
+        
+        is_weekend = weekday >= 5  # Saturday or Sunday
+        is_market_hours = 9 <= hour < 16  # 9 AM to 4 PM (simplified)
+        
+        if is_weekend:
+            status = "closed"
+            next_open = "Monday 9:30 AM EST"
+        elif is_market_hours:
+            status = "open"
+            next_open = "Currently trading"
+        else:
+            status = "closed"
+            if hour < 9:
+                next_open = "Today 9:30 AM EST"
+            else:
+                next_open = "Tomorrow 9:30 AM EST"
+        
+        return {
+            "status": status,
+            "next_open": next_open,
+            "timestamp": now.isoformat()
+        }
+    
+    def _can_make_api_call(self, provider: str) -> bool:
+        """Check if we can make an API call based on rate limits"""
+        if provider not in self.last_api_call:
+            return True
+        
+        time_since_last = time.time() - self.last_api_call[provider]
+        return time_since_last >= self.config.rate_limit_delay
+    
+    def _is_cached(self, key: str, ttl: Optional[int] = None) -> bool:
+        """Check if data is cached and still valid"""
+        if key not in self.cache:
+            return False
+        
+        cache_ttl = ttl or self.config.cache_ttl
+        cache_time = self.cache[key]["timestamp"]
+        
+        return (datetime.now() - cache_time).total_seconds() < cache_ttl
+    
+    def _cache_data(self, key: str, data: Any, ttl: Optional[int] = None):
+        """Cache data with timestamp"""
+        self.cache[key] = {
+            "data": data,
+            "timestamp": datetime.now(),
+            "ttl": ttl or self.config.cache_ttl
+        }
+```
+
+---
+
+## 13. PORTFOLIO CALCULATOR (`src/utils/portfolio_calc.py`)
+
+```python
+# Create comprehensive portfolio calculation utilities
+# Include allocation analysis, risk metrics, diversification scoring
+# Support for different asset classes and performance calculations
+
+import pandas as pd
+import numpy as np
+from typing import Dict, Any, List, Optional
+from datetime import datetime, timedelta
+import yfinance as yf
+
+class PortfolioCalculator:
+    """
+    Comprehensive portfolio analysis and calculation utilities
+    
+    Features:
+    - Asset allocation and diversification analysis
+    - Risk metrics calculation (Sharpe ratio, beta, volatility)
+    - Performance attribution and benchmarking
+    - Cost analysis (expense ratios, fees)
+    - Portfolio optimization recommendations
+    """
+    
+    def __init__(self):
+        # Asset class mappings for categorization
+        self.asset_class_mapping = {
+            "stocks": ["stock", "equity", "etf"],
+            "bonds": ["bond", "fixed income", "treasury"],
+            "real_estate": ["reit", "real estate"],
+            "commodities": ["commodity", "gold", "silver"],
+            "cash": ["cash", "money market", "savings"]
+        }
+        
+        # Risk-free rate (approximate - should be updated with current data)
+        self.risk_free_rate = 0.045  # 4.5% annual
+    
+    def calculate_all_metrics(self, portfolio_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Calculate comprehensive portfolio metrics
+        
+        Args:
+            portfolio_data: Dictionary containing holdings with symbols, quantities, prices
+        
+        Returns:
+            Complete metrics dictionary with all calculations
+        """
+        try:
+            # Parse and validate portfolio data
+            holdings_df = self._parse_portfolio_data(portfolio_data)
+            
+            if holdings_df.empty:
+                return {"error": "No valid portfolio data provided"}
+            
+            # Calculate basic metrics
+            basic_metrics = self._calculate_basic_metrics(holdings_df)
+            
+            # Calculate allocation metrics
+            allocation_metrics = self._calculate_allocation_metrics(holdings_df)
+            
+            # Calculate risk metrics
+            risk_metrics = self._calculate_risk_metrics(holdings_df)
+            
+            # Calculate performance metrics
+            performance_metrics = self._calculate_performance_metrics(holdings_df)
+            
+            # Calculate diversification score
+            diversification_score = self._calculate_diversification_score(holdings_df)
+            
+            # Calculate cost analysis
+            cost_analysis = self._calculate_cost_analysis(holdings_df)
+            
+            return {
+                **basic_metrics,
+                **allocation_metrics,
+                **risk_metrics,
+                **performance_metrics,
+                "diversification_score": diversification_score,
+                "cost_analysis": cost_analysis,
+                "calculation_timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            return {"error": f"Portfolio calculation failed: {str(e)}"}
+    
+    def _parse_portfolio_data(self, portfolio_data: Dict[str, Any]) -> pd.DataFrame:
+        """
+        Parse portfolio data into standardized DataFrame
+        
+        Expected formats:
+        - List of holdings with symbol, quantity, current_price
+        - DataFrame with columns: symbol, quantity, price
+        - CSV-like structure
+        """
+        if isinstance(portfolio_data, dict) and "holdings" in portfolio_data:
+            holdings = portfolio_data["holdings"]
+        else:
+            holdings = portfolio_data
+        
+        # Convert to DataFrame
+        if isinstance(holdings, pd.DataFrame):
+            df = holdings.copy()
+        elif isinstance(holdings, list):
+            df = pd.DataFrame(holdings)
+        else:
+            raise ValueError("Invalid portfolio data format")
+        
+        # Standardize column names
+        column_mapping = {
+            "ticker": "symbol",
+            "stock": "symbol",
+            "shares": "quantity",
+            "amount": "quantity",
+            "price": "current_price",
+            "value": "market_value"
+        }
+        
+        df = df.rename(columns=column_mapping)
+        
+        # Ensure required columns exist
+        required_columns = ["symbol", "quantity"]
+        for col in required_columns:
+            if col not in df.columns:
+                raise ValueError(f"Missing required column: {col}")
+        
+        # Calculate market value if not provided
+        if "market_value" not in df.columns:
+            if "current_price" in df.columns:
+                df["market_value"] = df["quantity"] * df["current_price"]
+            else:
+                # Fetch current prices
+                df["current_price"] = df["symbol"].apply(self._get_current_price)
+                df["market_value"] = df["quantity"] * df["current_price"]
+        
+        # Add asset class categorization
+        df["asset_class"] = df["symbol"].apply(self._categorize_asset)
+        
+        # Remove invalid holdings
+        df = df[df["market_value"] > 0].copy()
+        
+        return df
+    
+    def _calculate_basic_metrics(self, holdings_df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate basic portfolio metrics"""
+        total_value = holdings_df["market_value"].sum()
+        
+        return {
+            "total_portfolio_value": total_value,
+            "number_of_holdings": len(holdings_df),
+            "largest_holding_value": holdings_df["market_value"].max(),
+            "largest_holding_symbol": holdings_df.loc[holdings_df["market_value"].idxmax(), "symbol"],
+            "smallest_holding_value": holdings_df["market_value"].min(),
+            "average_holding_value": holdings_df["market_value"].mean(),
+            "portfolio_concentration": holdings_df["market_value"].max() / total_value * 100
+        }
+    
+    def _calculate_allocation_metrics(self, holdings_df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate asset allocation and sector breakdown"""
+        total_value = holdings_df["market_value"].sum()
+        
+        # Asset class allocation
+        asset_allocation = holdings_df.groupby("asset_class")["market_value"].sum()
+        asset_allocation_pct = (asset_allocation / total_value * 100).to_dict()
+        
+        # Individual holding weights
+        holdings_df["weight"] = holdings_df["market_value"] / total_value * 100
+        top_holdings = holdings_df.nlargest(10, "weight")[["symbol", "weight"]].to_dict("records")
+        
+        return {
+            "asset_allocation": asset_allocation_pct,
+            "top_10_holdings": top_holdings,
+            "weights": holdings_df[["symbol", "weight"]].to_dict("records")
+        }
+    
+    def _calculate_risk_metrics(self, holdings_df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate portfolio risk metrics"""
+        try:
+            # Get historical data for risk calculations
+            symbols = holdings_df["symbol"].tolist()
+            weights = holdings_df["market_value"] / holdings_df["market_value"].sum()
+            
+            # Fetch historical data (simplified - in production, would use more sophisticated data)
+            returns_data = {}
+            for symbol in symbols:
+                try:
+                    ticker = yf.Ticker(symbol)
+                    hist = ticker.history(period="1y")
+                    if not hist.empty:
+                        returns = hist["Close"].pct_change().dropna()
+                        returns_data[symbol] = returns
+                except:
+                    continue
+            
+            if not returns_data:
+                return {"risk_metrics_available": False, "reason": "No historical data available"}
+            
+            # Create returns DataFrame
+            returns_df = pd.DataFrame(returns_data)
+            returns_df = returns_df.dropna()
+            
+            if returns_df.empty:
+                return {"risk_metrics_available": False, "reason": "Insufficient data"}
+            
+            # Calculate portfolio returns
+            aligned_weights = []
+            aligned_returns = []
+            
+            for symbol in returns_df.columns:
+                if symbol in holdings_df["symbol"].values:
+                    weight = holdings_df[holdings_df["symbol"] == symbol]["market_value"].iloc[0]
+                    weight = weight / holdings_df["market_value"].sum()
+                    aligned_weights.append(weight)
+                    aligned_returns.append(returns_df[symbol])
+            
+            if not aligned_weights:
+                return {"risk_metrics_available": False, "reason": "No matching data"}
+            
+            # Portfolio return calculation
+            portfolio_returns = sum(w * r for w, r in zip(aligned_weights, aligned_returns))
+            
+            # Risk metrics
+            annual_return = portfolio_returns.mean() * 252
+            annual_volatility = portfolio_returns.std() * np.sqrt(252)
+            sharpe_ratio = (annual_return - self.risk_free_rate) / annual_volatility if annual_volatility > 0 else 0
+            
+            # VaR calculation (95% confidence)
+            var_95 = np.percentile(portfolio_returns, 5)
+            
+            return {
+                "risk_metrics_available": True,
+                "annual_return": annual_return * 100,
+                "annual_volatility": annual_volatility * 100,
+                "sharpe_ratio": sharpe_ratio,
+                "value_at_risk_95": var_95 * 100,
+                "risk_level": self._assess_risk_level(annual_volatility * 100)
+            }
+            
+        except Exception as e:
+            return {"risk_metrics_available": False, "reason": f"Calculation error: {str(e)}"}
+    
+    def _calculate_performance_metrics(self, holdings_df: pd.DataFrame) -> Dict[str, Any]:
+        """Calculate performance and return metrics"""
+        # Simplified performance calculation
+        # In production, would track cost basis and calculate actual returns
+        
+        return {
+            "performance_data_available": False,
+            "reason": "Cost basis data required for performance calculation",
+            "suggestion": "Track purchase prices and dates for accurate performance metrics"
+        }
+    
+    def _calculate_diversification_score(self, holdings_df: pd.DataFrame) -> Dict[str, Any]:
+        """
+        Calculate diversification score based on multiple factors
+        
+        Factors:
+        - Number of holdings
+        - Asset class distribution
+        - Concentration risk
+        - Geographic diversification (if data available)
+        """
+        total_holdings = len(holdings_df)
+        total_value = holdings_df["market_value"].sum()
+        
+        # Number of holdings score (0-25 points)
+        if total_holdings >= 20:
+            holdings_score = 25
+        elif total_holdings >= 10:
+            holdings_score = 20
+        elif total_holdings >= 5:
+            holdings_score = 15
+        else:
+            holdings_score = total_holdings * 3
+        
+        # Asset class diversification score (0-25 points)
+        asset_classes = holdings_df["asset_class"].nunique()
+        asset_score = min(asset_classes * 6, 25)
+        
+        # Concentration score (0-25 points)
+        max_holding_pct = holdings_df["market_value"].max() / total_value
+        if max_holding_pct <= 0.05:  # 5% or less
+            concentration_score = 25
+        elif max_holding_pct <= 0.10:  # 10% or less
+            concentration_score = 20
+        elif max_holding_pct <= 0.20:  # 20% or less
+            concentration_score = 15
+        else:
+            concentration_score = max(0, 25 - (max_holding_pct - 0.20) * 100)
+        
+        # Distribution evenness score (0-25 points)
+        weights = holdings_df["market_value"] / total_value
+        herfindahl_index = (weights ** 2).sum()
+        # Convert to score (lower HHI = higher score)
+        evenness_score = max(0, 25 - (herfindahl_index - (1/total_holdings)) * 500)
+        
+        total_score = holdings_score + asset_score + concentration_score + evenness_score
+        
+        # Generate recommendations
+        recommendations = []
+        if total_holdings < 10:
+            recommendations.append("Consider adding more holdings to improve diversification")
+        if asset_classes < 3:
+            recommendations.append("Consider diversifying across more asset classes")
+        if max_holding_pct > 0.20:
+            recommendations.append("Consider reducing concentration in largest holding")
+        
+        return {
+            "overall_score": min(100, total_score),
+            "breakdown": {
+                "holdings_diversity": holdings_score,
+                "asset_class_diversity": asset_score,
+                "concentration_management": concentration_score,
+                "distribution_evenness": evenness_score
+            },
+            "recommendations": recommendations,
+            "risk_level": "Low" if total_score >= 80 else "Medium" if total_score >= 60 else "High"
+        }
+    
+    def _calculate_cost_analysis(self, holdings_df: pd.DataFrame) -> Dict[str, Any]:
+        """Analyze portfolio costs and fees"""
+        # Simplified cost analysis
+        # In production, would include actual expense ratios and fees
+        
+        etf_count = holdings_df[holdings_df["symbol"].str.contains("ETF|Fund", case=False, na=False)].shape[0]
+        total_holdings = len(holdings_df)
+        
+        estimated_avg_expense_ratio = 0.20 if etf_count > total_holdings * 0.5 else 0.75
+        estimated_annual_cost = holdings_df["market_value"].sum() * (estimated_avg_expense_ratio / 100)
+        
+        return {
+            "cost_analysis_available": False,
+            "estimated_annual_cost": estimated_annual_cost,
+            "estimated_expense_ratio": estimated_avg_expense_ratio,
+            "note": "Connect to fund database for accurate expense ratio data"
+        }
+    
+    def _get_current_price(self, symbol: str) -> float:
+        """Fetch current price for a symbol"""
+        try:
+            ticker = yf.Ticker(symbol)
+            data = ticker.history(period="1d")
+            if not data.empty:
+                return data["Close"].iloc[-1]
+            return 0.0
+        except:
+            return 0.0
+    
+    def _categorize_asset(self, symbol: str) -> str:
+        """Categorize asset by symbol (simplified)"""
+        symbol = symbol.upper()
+        
+        # Simple categorization based on common patterns
+        if any(bond_indicator in symbol for bond_indicator in ["TLT", "BND", "AGG", "BOND"]):
+            return "bonds"
+        elif any(reit_indicator in symbol for reit_indicator in ["VNQ", "REIT", "REZ"]):
+            return "real_estate"
+        elif symbol in ["GLD", "SLV", "GOLD", "SILVER"]:
+            return "commodities"
+        elif symbol in ["CASH", "VMFXX", "SPAXX"]:
+            return "cash"
+        else:
+            return "stocks"  # Default to stocks
+    
+    def _assess_risk_level(self, volatility: float) -> str:
+        """Assess risk level based on volatility"""
+        if volatility < 10:
+            return "Low"
+        elif volatility < 20:
+            return "Medium"
+        else:
+            return "High"
+
+class FinancialCalculator:
+    """
+    Financial calculation utilities for goal planning
+    
+    Features:
+    - Time value of money calculations
+    - Retirement planning scenarios
+    - Savings goal projections
+    - Monte Carlo simulations (simplified)
+    """
+    
+    @staticmethod
+    def future_value(present_value: float, rate: float, periods: int) -> float:
+        """Calculate future value with compound interest"""
+        return present_value * (1 + rate) ** periods
+    
+    @staticmethod
+    def present_value(future_value: float, rate: float, periods: int) -> float:
+        """Calculate present value"""
+        return future_value / (1 + rate) ** periods
+    
+    @staticmethod
+    def pmt_required(future_value: float, rate: float, periods: int, present_value: float = 0) -> float:
+        """Calculate required periodic payment to reach goal"""
+        if rate == 0:
+            return (future_value - present_value) / periods
+        
+        return (future_value - present_value * (1 + rate) ** periods) / (((1 + rate) ** periods - 1) / rate)
+    
+    @staticmethod
+    def calculate_retirement_scenarios(
+        current_age: int,
+        retirement_age: int,
+        current_savings: float,
+        monthly_contribution: float,
+        annual_expenses: float
+    ) -> Dict[str, Any]:
+        """Calculate retirement planning scenarios"""
+        
+        years_to_retirement = retirement_age - current_age
+        months_to_retirement = years_to_retirement * 12
+        
+        scenarios = {}
+        return_assumptions = {
+            "conservative": 0.04,
+            "moderate": 0.07,
+            "aggressive": 0.10
+        }
+        
+        for scenario_name, annual_return in return_assumptions.items():
+            monthly_return = annual_return / 12
+            
+            # Future value of current savings
+            fv_current = FinancialCalculator.future_value(current_savings, annual_return, years_to_retirement)
+            
+            # Future value of monthly contributions
+            if monthly_return > 0:
+                fv_contributions = monthly_contribution * (((1 + monthly_return) ** months_to_retirement - 1) / monthly_return)
+            else:
+                fv_contributions = monthly_contribution * months_to_retirement
+            
+            total_retirement_value = fv_current + fv_contributions
+            
+            # Calculate sustainable withdrawal (4% rule)
+            safe_withdrawal_rate = 0.04
+            annual_income = total_retirement_value * safe_withdrawal_rate
+            monthly_income = annual_income / 12
+            
+            scenarios[scenario_name] = {
+                "total_value": total_retirement_value,
+                "annual_income": annual_income,
+                "monthly_income": monthly_income,
+                "income_vs_expenses_ratio": annual_income / annual_expenses if annual_expenses > 0 else 0,
+                "years_of_coverage": total_retirement_value / annual_expenses if annual_expenses > 0 else float('inf'),
+                "return_assumption": annual_return * 100
+            }
+        
+        return {
+            "scenarios": scenarios,
+            "years_to_retirement": years_to_retirement,
+            "monthly_contribution": monthly_contribution,
+            "current_savings": current_savings
+        }
+```
+
+---
+
+## 14. QUICK START IMPLEMENTATION GUIDE
+
+### Development Phases (1-2 Week Timeline)
+
+```markdown
+# WEEK 1: Core Implementation
+
+## Day 1-2: Environment Setup
+1. Create virtual environment: `python -m venv finance_assistant`
+2. Install requirements: `pip install -r requirements.txt`
+3. Set up API keys in `.env` file:
+   ```
+   OPENAI_API_KEY=your_key_here
+   ALPHA_VANTAGE_KEY=your_key_here
+   ```
+4. Create project structure as specified above
+
+## Day 3-4: Core Agent Development
+1. Implement BaseAgent class
+2. Create FinanceQAAgent with basic RAG integration
+3. Set up FAISS vector store with sample financial documents
+4. Test agent responses with simple queries
+
+## Day 5-7: Workflow and UI
+1. Implement LangGraph workflow with basic routing
+2. Create Streamlit chat interface
+3. Test end-to-end conversation flow
+4. Add basic error handling
+
+# WEEK 2: Advanced Features
+
+## Day 8-10: Portfolio and Market Agents
+1. Implement PortfolioAnalysisAgent with calculations
+2. Create MarketAnalysisAgent with Alpha Vantage integration
+3. Add portfolio upload functionality to Streamlit
+4. Implement market data dashboard
+
+## Day 11-12: Goal Planning and Polish
+1. Implement GoalPlanningAgent with financial calculations
+2. Add goal setting interface
+3. Create visualization components
+4. Test all agent interactions
+
+## Day 13-14: Final Integration and Demo
+1. Comprehensive testing and bug fixes
+2. Create demo video
+3. Write documentation
+4. Final polish and deployment preparation
+```
+
+###  Prompts for Rapid Development
+
+Use these specific prompts with  to generate code quickly:
+
+```python
+# For agent implementation:
+"Create a complete finance education agent that inherits from BaseAgent, integrates with RAG retrieval, handles financial queries with source citations, and includes confidence scoring"
+
+# For workflow routing:
+"Implement LangGraph workflow with conditional routing based on query classification, state management, error handling, and agent handoff logic"
+
+# For Streamlit interface:
+"Create a professional Streamlit interface with chat functionality, file upload for portfolios, real-time market data display, and session state management"
+
+# For portfolio calculations:
+"Implement comprehensive portfolio analysis including asset allocation, diversification scoring, risk metrics calculation, and performance attribution"
+
+# For market data integration:
+"Create market data provider with Alpha Vantage API integration, intelligent caching, rate limiting, error handling, and multiple data format support"
+```
+
+### Testing Strategy
+
+```python
+# Test each component individually:
+def test_finance_qa_agent():
+    """Test basic Q&A functionality"""
+    agent = FinanceQAAgent(llm, retriever)
+    state = {"user_query": "What is diversification?"}
+    result = agent.execute(state)
+    assert "diversification" in result["agent_response"].lower()
+    assert len(result["sources"]) > 0
+
+def test_portfolio_analysis():
+    """Test portfolio calculation"""
+    sample_portfolio = {
+        "holdings": [
+            {"symbol": "AAPL", "quantity": 10, "current_price": 150},
+            {"symbol": "MSFT", "quantity": 5, "current_price": 300}
+        ]
+    }
+    calculator = PortfolioCalculator()
+    metrics = calculator.calculate_all_metrics(sample_portfolio)
+    assert "total_portfolio_value" in metrics
+    assert metrics["total_portfolio_value"] == 3000
+
+def test_workflow_routing():
+    """Test LangGraph routing"""
+    workflow = FinanceAssistantWorkflow(agents)
+    result = workflow.run("What is my portfolio allocation?")
+    assert result["agent"] == "portfolio_analysis"
+```
+
+---
+
+## 15. CONFIGURATION FILES
+
+### config.yaml
+```yaml
+# Application Configuration
+app:
+  name: "AI Finance Assistant"
+  version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+
+# API Configuration
+apis:
+  openai:
+    model: "gpt-4"
+    max_tokens: 1000
+    temperature: 0.7
+  alpha_vantage:
+    base_url: "https://www.alphavantage.co/query"
+    rate_limit: 5  # calls per minute
+
+# Vector Database
+vector_db:
+  type: "faiss"
+  index_path: "data/faiss_index"
+  embedding_model: "text-embedding-ada-002"
+  chunk_size: 500
+  chunk_overlap: 50
+
+# Caching
+cache:
+  market_data_ttl: 1800  # 30 minutes
+  portfolio_cache_ttl: 300  # 5 minutes
+  max_cache_size: 1000
+
+# UI Settings
+ui:
+  page_title: "AI Finance Assistant"
+  layout: "wide"
+  theme: "light"
+  max_chat_history: 100
+```
+
+### .env Template
+```bash
+# API Keys
+OPENAI_API_KEY=sk-your-openai-key-here
+ALPHA_VANTAGE_KEY=your-alpha-vantage-key-here
+
+# Database
+VECTOR_DB_PATH=data/faiss_index
+
+# Logging
+LOG_LEVEL=INFO
+DEBUG=False
+
+# Cache Settings
+REDIS_URL=redis://localhost:6379/0  # Optional for advanced caching
+```
+
+---
+
+## 16. SAMPLE DATA AND KNOWLEDGE BASE
+
+### Sample Portfolio Data (CSV format)
+```csv
+symbol,quantity,purchase_price,current_price,asset_class
+AAPL,50,120.00,175.50,stocks
+MSFT,25,250.00,380.00,stocks
+GOOGL,10,2100.00,2800.00,stocks
+BND,100,78.50,75.20,bonds
+VTI,30,180.00,220.00,stocks
+REIT,20,45.00,50.00,real_estate
+```
+
+### Sample Financial Knowledge Base Articles
+Create these files in `data/knowledge_base/`:
+
+1. **basics_investing.txt** - Investment fundamentals
+2. **diversification.txt** - Portfolio diversification principles  
+3. **asset_classes.txt** - Stocks, bonds, REITs explanation
+4. **risk_management.txt** - Risk tolerance and management
+5. **retirement_planning.txt** - 401k, IRA, retirement strategies
+
+---
+
+This comprehensive specification provides everything you need to build the AI Finance Assistant using . Each component is designed to be implementable in small, manageable chunks that Copilot can generate effectively.
+
+**Next Steps:**
+1. Set up the project structure
+2. Start with the base agent and simple Q&A functionality
+3. Gradually add complexity with portfolio analysis and market data
+4. Test each component as you build
+5. Integrate everything into the Streamlit interface
+
+Would you like me to elaborate on any specific component or provide more detailed prompts for particular functionality?

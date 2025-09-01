@@ -1,0 +1,52 @@
+# Application Configuration
+app:
+  name: "AI Finance Assistant"
+  version: "1.0.0"
+  debug: false
+  log_level: "INFO"
+  show_workflow_status: false
+
+# API Configuration
+apis:
+  openai:
+    model: "gpt-4"
+    max_tokens: 1000
+    temperature: 0.7
+  alpha_vantage:
+    base_url: "https://www.alphavantage.co/query"
+    rate_limit: 5  # calls per minute
+
+# Agent Configuration
+agents:
+  market_agent:
+    # Toggle between 'direct' and 'tools' integration patterns
+    # 'direct': Agent directly calls MarketDataProvider methods (current)
+    # 'tools': Agent uses LangChain tools for LLM-driven tool calling
+    integration_mode: "tools"  # Change to "direct" for current behavior
+    enable_tool_calling: true
+    max_tool_calls: 5
+  portfolio_agent:
+    integration_mode: "direct"
+  goal_agent:
+    integration_mode: "direct"
+
+# Vector Database
+vector_db:
+  type: "faiss"
+  index_path: "data/faiss_index"
+  embedding_model: "text-embedding-ada-002"
+  chunk_size: 500
+  chunk_overlap: 50
+
+# Caching
+cache:
+  market_data_ttl: 1800  # 30 minutes
+  portfolio_cache_ttl: 300  # 5 minutes
+  max_cache_size: 1000
+
+# UI Settings
+ui:
+  page_title: "AI Finance Assistant"
+  layout: "wide"
+  theme: "light"
+  max_chat_history: 100

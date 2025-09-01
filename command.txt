@@ -1,0 +1,4 @@
+## run test
+/Users/sudhakarmarimuthu/development/py-pro/agents/ai_finance_assistant/.venv/bin/python -m pytest tests/test_agents/test_finance_qa_agent.py -v
+
+

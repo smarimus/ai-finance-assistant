@@ -1,0 +1,114 @@
+Phase 2: Knowledge-Enhanced Assistant
+Goal: Add RAG system for better financial education responses
+┌─────────────────────────────────────────┐
+│  User Types: "What is diversification?" │
+│             ↓                           │
+│  Query → FAISS Vector Search            │
+│             ↓                           │
+│  Retrieved Financial Articles          │
+│             ↓                           │
+│  Finance Q&A Agent + Context           │
+│             ↓                           │
+│  Response with Source Citations         │
+└─────────────────────────────────────────┘
+What's Added in Phase 2:
+
+✅ FAISS vector database with financial articles
+✅ RAG retrieval system
+✅ Source citations in responses
+✅ Much better answer quality
+
+What Still Works from Phase 1:
+
+✅ Chat interface (no changes needed)
+✅ Basic agent structure (just enhanced)
+
+Phase 3: Multi-Agent Routing 
+Goal: Add LangGraph workflow to route different types of queries
+┌─────────────────────────────────────────┐
+│  User: "Analyze my portfolio"           │
+│             ↓                           │
+│  LangGraph Query Router                 │
+│             ↓                           │
+│  Routes to Portfolio Agent             │
+│             ↓                           │
+│  "Please upload portfolio data"        │
+└─────────────────────────────────────────┘
+
+┌─────────────────────────────────────────┐
+│  User: "What is compound interest?"     │
+│             ↓                           │
+│  LangGraph Query Router                 │
+│             ↓                           │
+│  Routes to Finance Q&A Agent           │
+│             ↓                           │
+│  Educational response with sources     │
+└─────────────────────────────────────────┘
+What's Added in Phase 3:
+
+✅ LangGraph workflow orchestration
+✅ Intelligent query routing
+✅ Portfolio Analysis Agent (basic version)
+✅ Multi-tab Streamlit interface
+
+What Still Works:
+
+✅ All Phase 1 & 2 functionality
+✅ Educational queries work exactly the same
+✅ Now portfolio queries get routed correctly
+
+Phase 4: Portfolio Analysis
+Goal: Add full portfolio upload and analysis capabilities
+┌─────────────────────────────────────────┐
+│  User uploads CSV: AAPL,10,150.00       │
+│             ↓                           │
+│  Portfolio Tab → Parse Data             │
+│             ↓                           │
+│  Portfolio Calculator                   │
+│             ↓                           │
+│  Metrics + Charts + Recommendations     │
+│             ↓                           │
+│  "Your portfolio is 80% tech stocks"   │
+└─────────────────────────────────────────┘
+What's Added in Phase 4:
+
+✅ CSV portfolio upload
+✅ Portfolio calculations (allocation, diversification)
+✅ Charts and visualizations
+✅ Portfolio-specific recommendations
+
+What Still Works:
+
+✅ All previous chat functionality
+✅ Educational queries unchanged
+✅ Chat can now reference uploaded portfolio
+
+Phase 5: Market Data Integration (Days 10-11)
+Goal: Add real-time market data and analysis
+┌─────────────────────────────────────────┐
+│  User: "How is AAPL doing today?"       │
+│             ↓                           │
+│  Market Analysis Agent                  │
+│             ↓                           │
+│  Alpha Vantage API Call                 │
+│             ↓                           │
+│  "AAPL: $175.50 (+2.3%)"              │
+└─────────────────────────────────────────┘
+What's Added in Phase 5:
+
+✅ Alpha Vantage API integration
+✅ Market data caching
+✅ Market overview dashboard
+✅ Individual stock lookups
+
+Phase 6: Goal Planning
+Goal: Add financial goal setting and projections
+┌─────────────────────────────────────────┐
+│  User: "I want to retire with $1M"      │
+│             ↓                           │
+│  Goal Planning Agent                    │
+│             ↓                           │
+│  Financial Calculations                 │
+│             ↓                           │
+│  "Save $850/month for 25 years"        │
+└─────────────────────────────────────────┘
