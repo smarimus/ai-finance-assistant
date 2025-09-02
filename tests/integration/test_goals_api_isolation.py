@@ -6,7 +6,11 @@ Verify that the Goals tab doesn't trigger Alpha Vantage API calls
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 # Mock session state for testing
 class MockSessionState:

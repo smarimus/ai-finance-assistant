@@ -6,7 +6,11 @@ Tests the goal planning agent and interface functionality
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 import pytest
 from unittest.mock import Mock, patch

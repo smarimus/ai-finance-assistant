@@ -5,9 +5,11 @@ from unittest.mock import Mock, MagicMock
 from typing import Dict, Any
 import os
 import sys
+from pathlib import Path
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.core.state import FinanceAssistantState
 from src.utils.portfolio_calc import PortfolioCalculator, FinancialCalculator

@@ -7,11 +7,12 @@ This script demonstrates how to load and query your vector database
 import sys
 from pathlib import Path
 
-# Add src to path
-sys.path.append(str(Path(__file__).parent / "src"))
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
-from rag.vector_store import FinanceVectorStore
-from rag.retriever import FinanceRetriever
+from src.rag.vector_store import FinanceVectorStore
+from src.rag.retriever import FinanceRetriever
 
 def test_vector_database():
     """Test loading and querying the FAISS vector database"""

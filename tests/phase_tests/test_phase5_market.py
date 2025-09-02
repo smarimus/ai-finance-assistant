@@ -6,7 +6,11 @@ Test all market features including real-time data, charts, and AI analysis
 
 import sys
 import os
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.data.market_data import MarketDataProvider
 from src.agents.market_agent import MarketAnalysisAgent

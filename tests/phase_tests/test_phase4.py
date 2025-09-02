@@ -5,7 +5,7 @@ Test Phase 4 Portfolio Analysis Implementation
 
 import sys
 import pandas as pd
-from src.core.workflow import SimpleFinanceWorkflow
+from src.core.simple_workflow import SimpleFinanceWorkflow
 from src.utils.portfolio_calc import PortfolioCalculator
 
 def test_phase4_implementation():

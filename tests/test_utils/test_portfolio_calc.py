@@ -1,5 +1,12 @@
 # Test portfolio calculation utilities
 
+import sys
+from pathlib import Path
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 import pytest
 import math
 from src.utils.portfolio_calc import PortfolioCalculator, FinancialCalculator
