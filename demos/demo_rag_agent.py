@@ -8,12 +8,13 @@ import sys
 from pathlib import Path
 import os
 
-# Add src to path
-sys.path.append(str(Path(__file__).parent / "src"))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from rag.vector_store import FinanceVectorStore
-from rag.retriever import FinanceRetriever
-from core.state import FinanceAssistantState
+from src.rag.vector_store import FinanceVectorStore
+from src.rag.retriever import FinanceRetriever
+from src.core.state import FinanceAssistantState
 
 def demo_basic_rag_usage():
     """Basic RAG usage without agents"""
@@ -52,7 +53,7 @@ def demo_agent_integration():
     
     try:
         # Try to import and use the agent if LLM is available
-        from agents.finance_qa_agent import FinanceQAAgent
+        from src.agents.finance_qa_agent import FinanceQAAgent
         
         # Initialize RAG system
         vector_store = FinanceVectorStore(index_path="src/data/faiss_index")

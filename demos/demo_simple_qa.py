@@ -16,9 +16,11 @@ import sys
 import os
 from datetime import datetime
 from typing import Dict, Any
+from pathlib import Path
 
-# Add src to path for imports
-sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 # Mock LLM for demonstration (replace with real LLM in production)
 class MockLLM:
@@ -141,8 +143,8 @@ def demo_basic_functionality():
     print("=" * 60)
     
     # Import our agents
-    from agents.finance_qa_agent import FinanceQAAgent
-    from core.state import FinanceAssistantState
+    from src.agents.finance_qa_agent import FinanceQAAgent
+    from src.core.state import FinanceAssistantState
     
     # Initialize mock components
     mock_llm = MockLLM()
@@ -219,7 +221,7 @@ def demo_error_handling():
     print("\n🛡️ Error Handling Demo")
     print("-" * 30)
     
-    from agents.finance_qa_agent import FinanceQAAgent
+    from src.agents.finance_qa_agent import FinanceQAAgent
     
     # Create agent with intentionally broken components
     broken_llm = None
