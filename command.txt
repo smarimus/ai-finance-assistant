@@ -1,4 +1,229 @@
-## run test
-/Users/sudhakarmarimuthu/development/py-pro/agents/ai_finance_assistant/.venv/bin/python -m pytest tests/test_agents/test_finance_qa_agent.py -v
+# AI Finance Assistant Commands
+
+## Setup Commands
+
+### Poetry Setup (Recommended)
+```bash
+# Install Poetry if not installed
+curl -sSL https://install.python-poetry.org | python3 -
+
+# Install dependencies
+poetry install
+
+# Install dev dependencies
+poetry install --with dev
+
+# Activate virtual environment
+poetry shell
+```
+
+### Pip Setup (Alternative)
+```bash
+# Create virtual environment
+python3 -m venv .venv
+
+# Activate virtual environment (macOS/Linux)
+source .venv/bin/activate
+
+# Activate virtual environment (Windows)
+.venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Install dev dependencies
+pip install -r requirements-dev.txt
+```
+
+## Running the Application
+
+### Poetry Commands
+```bash
+# Run the main application
+poetry run python main.py
+
+# Run Streamlit app
+poetry run streamlit run streamlit_app.py
+
+# Run specific modules
+poetry run python -m src.web_app.main
+```
+
+### Pip Commands (with activated venv)
+```bash
+# Run the main application
+python main.py
+
+# Run Streamlit app
+streamlit run streamlit_app.py
+
+# Run specific modules
+python -m src.web_app.main
+```
+
+## Testing Commands
+
+### Poetry Testing
+```bash
+# Run all tests
+poetry run pytest
+
+# Run tests with verbose output
+poetry run pytest -v
+
+# Run tests with coverage
+poetry run pytest --cov=src
+
+# Run specific test file
+poetry run pytest tests/test_agents/test_finance_qa_agent.py -v
+
+# Run specific test function
+poetry run pytest tests/test_agents/test_finance_qa_agent.py::test_function_name -v
+
+# Run routing tests
+poetry run pytest tests/test_routing_fix.py -v
+
+# Run tests and generate HTML coverage report
+poetry run pytest --cov=src --cov-report=html
+```
+
+### Pip Testing (with activated venv)
+```bash
+# Run all tests
+pytest
+
+# Run tests with verbose output
+pytest -v
+
+# Run tests with coverage
+pytest --cov=src
+
+# Run specific test file
+pytest tests/test_agents/test_finance_qa_agent.py -v
+
+# Run specific test function
+pytest tests/test_agents/test_finance_qa_agent.py::test_function_name -v
+
+# Run routing tests
+pytest tests/test_routing_fix.py -v
+
+# Run tests and generate HTML coverage report
+pytest --cov=src --cov-report=html
+```
+
+## Development Commands
+
+### Poetry Development
+```bash
+# Add new dependency
+poetry add package_name
+
+# Add development dependency
+poetry add --group dev package_name
+
+# Update dependencies
+poetry update
+
+# Show dependency tree
+poetry show --tree
+
+# Check for dependency issues
+poetry check
+
+# Build the package
+poetry build
+
+# Run linting (if configured)
+poetry run black src/ tests/
+poetry run flake8 src/ tests/
+```
+
+### Pip Development (with activated venv)
+```bash
+# Install new package and update requirements
+pip install package_name
+pip freeze > requirements.txt
+
+# Update all packages
+pip install --upgrade -r requirements.txt
+
+# Check installed packages
+pip list
+
+# Show package information
+pip show package_name
+```
+
+## Useful Debug Commands
+
+### Poetry Debug
+```bash
+# Run with Python path debugging
+poetry run python -c "import sys; print(sys.path)"
+
+# Check Poetry environment info
+poetry env info
+
+# Run interactive Python shell
+poetry run python
+
+# Run with environment variables
+poetry run python -c "import os; print(os.environ.get('OPENAI_API_KEY', 'Not set'))"
+```
+
+### Pip Debug (with activated venv)
+```bash
+# Run with Python path debugging
+python -c "import sys; print(sys.path)"
+
+# Check Python executable location
+which python
+
+# Run interactive Python shell
+python
+
+# Run with environment variables
+python -c "import os; print(os.environ.get('OPENAI_API_KEY', 'Not set'))"
+```
+
+## Environment Management
+
+### Poetry Environment
+```bash
+# Show current environment
+poetry env info
+
+# List all environments
+poetry env list
+
+# Remove environment
+poetry env remove python3.9
+
+# Use specific Python version
+poetry env use python3.9
+```
+
+### Pip Environment
+```bash
+# Deactivate virtual environment
+deactivate
+
+# Remove virtual environment
+rm -rf .venv
+
+# Create new virtual environment with specific Python
+python3.9 -m venv .venv
+```
+
+## Quick Reference
+
+### Most Common Commands
+```bash
+# Poetry workflow
+poetry install && poetry run pytest && poetry run streamlit run streamlit_app.py
+
+# Pip workflow
+source .venv/bin/activate && pip install -r requirements.txt && pytest && streamlit run streamlit_app.py
+```
 
 
