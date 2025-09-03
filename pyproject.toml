@@ -1,119 +1,46 @@
-[tool.poetry]
+[project]
 name = "ai-finance-assistant"
 version = "1.0.0"
 description = "Multi-agent AI system for financial education and portfolio management"
-authors = ["Your Name <your.email@example.com>"]
+authors = [
+    {name = "Your Name", email = "you@example.com"}
+]
 readme = "README.md"
+requires-python = ">=3.9,!=3.9.7,<4.0"
+dependencies = [
+    # Just use compatible versions instead of exact pins
+    "langchain>=0.1.20,<0.2.0",
+    "langgraph>=0.0.20,<0.1.0",
+    "openai>=1.99.0,<2.0.0",
+    "streamlit>=1.48.0,<2.0.0",
+    "pandas>=2.3.0,<3.0.0",
+    "plotly>=5.24.0,<6.0.0",
+    "requests>=2.31.0,<3.0.0",
+    "python-dotenv>=1.1.0,<2.0.0",
+    "pydantic>=2.11.0,<3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0,<8.0.0",
+    "pytest-asyncio>=0.21.0,<1.0.0",
+]
+
+[project.scripts]
+finance-assistant = "src.web_app.main:main"
+
+[tool.poetry]
 packages = [{include = "src"}]
 
-[tool.poetry.dependencies]
-python = ">=3.9,<3.9.7 || >3.9.7,<4.0"
-# Core AI and LangChain (Updated to current working versions)
-langchain = "^0.1.20"
-langgraph = "^0.0.20"
-langchain-core = "^0.1.53"
-langchain-community = "^0.0.38"
-langchain-openai = "^0.1.7"
-langchain-text-splitters = "^0.0.2"
-openai = "^1.99.0"
-langsmith = "^0.1.147"
-
-# Vector Database (Updated to current working versions)
-faiss-cpu = "^1.12.0"
-sentence-transformers = "^2.7.0"
-torch = "^2.8.0"
-transformers = "^4.55.0"
-scikit-learn = "^1.6.0"
-
-# Market Data (Updated versions)
-yfinance = "^0.2.65"
-alpha-vantage = "^2.3.1"
-requests = "^2.31.0"
-
-# Web Interface (Updated to current working versions)
-streamlit = "^1.48.0"
-plotly = "^5.24.0"
-matplotlib = "^3.9.0"
-seaborn = "^0.13.2"
-
-# Data Processing (Updated versions)
-pandas = "^2.3.0"
-numpy = "^1.26.4"
-scipy = "^1.13.0"
-
-# Utilities (Updated versions)
-python-dotenv = "^1.1.0"
-PyYAML = "^6.0.2"
-pydantic = "^2.11.0"
-typing-extensions = "^4.14.0"
-
-[tool.poetry.group.dev.dependencies]
-# Testing Framework
-pytest = "^7.4.3"
-pytest-asyncio = "^0.21.1"
-pytest-cov = "^4.1.0"
-pytest-mock = "^3.12.0"
-pytest-xdist = "^3.5.0"
-
-# Code Quality
-black = "^23.12.1"
-isort = "^5.13.2"
-flake8 = "^7.0.0"
-mypy = "^1.8.0"
-
-# Development Tools
-jupyter = "^1.0.0"
-ipython = "^8.18.1"
-pre-commit = "^3.6.0"
-
-# Documentation
-sphinx = "^7.2.6"
-sphinx-rtd-theme = "^2.0.0"
-
-[tool.poetry.scripts]
-finance-assistant = "src.web_app.main:main"
-run-tests = "run_tests:main"
-
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 88
 target-version = ['py39']
-include = '\.pyi?$'
-extend-exclude = '''
-/(
-  # directories
-  \.eggs
-  | \.git
-  | \.hg
-  | \.mypy_cache
-  | \.tox
-  | \.venv
-  | build
-  | dist
-)/
-'''
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-line_length = 88
-
-[tool.mypy]
-python_version = "3.9"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --cov=src --cov-report=html --cov-report=term"
-markers = [
-    "integration: marks tests as integration tests",
-    "slow: marks tests as slow",
-]
+addopts = "-v --cov=src"

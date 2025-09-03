@@ -20,18 +20,33 @@ cd ai-finance-assistant
 # 2. Install Poetry (if not installed)
 curl -sSL https://install.python-poetry.org | python3 -
 
-# 3. Create and activate virtual environment
+# 3. Use Python 3.9 and install dependencies
 poetry env use python3.9
-poetry shell
-
-# 4. Install dependencies
 poetry install
 
-# 5. Set up environment variables
+# 4. Set up environment variables
 cp .env.example .env
 # Edit .env with your API keys:
 # - OPENAI_API_KEY=your_openai_api_key_here
 # - ALPHA_VANTAGE_API_KEY=your_alpha_vantage_key_here
+
+# 5. Run the application
+poetry run streamlit run streamlit_app.py
+```
+
+**Poetry Commands:**
+```bash
+# Activate environment (Poetry 2.0+ style)
+poetry env activate
+# Then run: source /path/to/.venv/bin/activate
+
+# Run any command with Poetry
+poetry run python test_routing_fix.py
+poetry run streamlit run streamlit_app.py
+poetry run pytest tests/
+
+# Update dependencies (if needed)
+poetry update
 ```
 
 ### Option 2: pip + venv Setup (Alternative)
@@ -76,12 +91,16 @@ Edit `config.yaml` for custom settings:
 ## 🚀 Running the Application
 
 ### Start Streamlit App
+
+**With Poetry (Recommended):**
+```bash
+# Run directly with Poetry
+poetry run streamlit run streamlit_app.py
+```
+
+**With pip/venv:**
 ```bash
 # Make sure virtual environment is activated
-# Poetry:
-poetry shell
-
-# Or venv:
 source .venv/bin/activate
 
 # Run the application
@@ -94,16 +113,19 @@ The app will be available at: http://localhost:8501
 
 ### 1. Test Core Functionality
 ```bash
-# Run basic tests
-python -m pytest tests/ -v
-
-# Or using poetry
+# With Poetry:
 poetry run pytest tests/ -v
+
+# With pip/venv:
+python -m pytest tests/ -v
 ```
 
 ### 2. Test Agent Routing
 ```bash
-# Run the routing test
+# With Poetry:
+poetry run python test_routing_fix.py
+
+# With pip/venv:
 python test_routing_fix.py
 ```
 
@@ -196,9 +218,19 @@ ai_finance_assistant/
 If you encounter issues:
 
 1. **Check logs**: The app shows debug information in the terminal
-2. **Test routing**: Run `python test_routing_fix.py`
+2. **Test routing**: Run `python test_routing_fix.py` or `poetry run python test_routing_fix.py`
 3. **Verify dependencies**: Compare your installed versions with `requirements.txt`
 4. **API keys**: Ensure all required API keys are set correctly
+
+## 📦 Poetry Benefits
+
+If you choose Poetry setup, you get:
+
+- **🔒 Dependency Locking**: `poetry.lock` ensures reproducible builds
+- **🚀 Easy Commands**: `poetry run <command>` for any script
+- **📋 Modern Config**: `pyproject.toml` follows Python standards
+- **🔄 Easy Updates**: `poetry update` to upgrade dependencies safely
+- **👥 Team Collaboration**: Everyone gets the same exact environment
 
 ## 🎯 Success Indicators
 
@@ -213,4 +245,4 @@ You'll know the setup is working when:
 ---
 
 **Last Updated**: September 2025  
-**Status**: All flows working, routing fixes applied, dependencies synchronized
+**Status**: All flows working, routing fixes applied, dependencies synchronized, Poetry setup documented
