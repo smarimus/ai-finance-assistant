@@ -6,7 +6,8 @@ Test script to verify the routing logic fix for educational vs portfolio queries
 
 import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add the parent directory to sys.path to find the src module
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.core.workflow_v2 import FinanceAssistantWorkflowV2
 
