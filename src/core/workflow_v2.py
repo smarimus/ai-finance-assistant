@@ -81,11 +81,22 @@ class FinanceAssistantWorkflowV2:
         return state
     
     def _is_portfolio_query(self, query: str) -> bool:
-        """Detect portfolio-related queries"""
+        """Detect portfolio-related queries with enhanced logic to distinguish from educational questions"""
+        # First check if it's an educational question (should go to Q&A agent)
+        educational_patterns = [
+            "what is", "what are", "how do", "how does", "explain", "define",
+            "what's the difference", "difference between", "meaning of", "tell me about",
+            "why is", "why are", "help me understand"
+        ]
+        if any(pattern in query for pattern in educational_patterns):
+            return False
+        
+        # Portfolio-specific keywords that indicate personal portfolio analysis
         portfolio_keywords = [
-            "portfolio", "allocation", "diversification", "holdings", "rebalance",
-            "analyze my", "balance", "stocks", "bonds", "etf", "mutual fund",
-            "asset allocation", "investment mix", "risk tolerance", "performance"
+            "portfolio", "allocation", "holdings", "rebalance",
+            "analyze my", "balance", "my stocks", "my bonds", "my etf", "my mutual fund",
+            "asset allocation", "investment mix", "risk tolerance", "my performance",
+            "my investments", "rebalance my", "analyze portfolio", "my diversification"
         ]
         return any(keyword in query for keyword in portfolio_keywords)
     

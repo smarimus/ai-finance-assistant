@@ -1,11 +1,21 @@
-# Core AI and LangChain
+# AI Finance Assistant - Dependencies
+# Status: WORKING - App successfully running on Python 3.9 with these versions
+# Last tested: September 2025
+# Note: LangGraph 0.0.25 with CheckpointAt import fix applied
+
+# Core AI and LangChain (WORKING VERSIONS)
 langchain==0.1.0
-langgraph==0.0.26
+langgraph==0.0.25
+langchain-core==0.1.30
+langchain-community==0.0.19
+langchain-openai==0.0.5
 openai==1.12.0
 
-# Vector Database
+# Vector Database (WORKING VERSIONS)
 faiss-cpu==1.7.4
 sentence-transformers==2.2.2
+nltk==3.9.1
+sentencepiece==0.2.1
 
 # Market Data
 yfinance==0.2.12
@@ -16,8 +26,18 @@ requests==2.31.0
 beautifulsoup4==4.12.3
 lxml==5.1.0
 
-# Web Interface
+# Streamlit (WORKING VERSION)
 streamlit==1.31.0
+rich==13.9.4
+tzlocal==5.3.1
+validators==0.35.0
+cachetools==5.5.2
+importlib-metadata==7.2.1
+numpy==1.26.4
+packaging==23.2
+pillow==10.4.0
+protobuf==4.25.8
+tenacity==8.5.0
 plotly==5.17.0
 matplotlib==3.8.2
 seaborn==0.13.0

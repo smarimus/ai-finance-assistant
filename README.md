@@ -1,6 +1,8 @@
 # 🏦 AI Finance Assistant
 ### Intelligent Multi-Agent Financial Analysis Platform
 
+> **✅ STATUS: WORKING & TESTED** - Successfully running on macOS with Python 3.9 (September 2025)
+
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
 [![Streamlit](https://img.shields.io/badge/Streamlit-1.28+-red.svg)](https://streamlit.io)
 [![LangChain](https://img.shields.io/badge/LangChain-0.1+-green.svg)](https://langchain.dev)
@@ -52,12 +54,12 @@ git clone https://github.com/smarimus/ai-finance-assistant.git
 cd ai-finance-assistant
 
 # Setup environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Launch the app
-streamlit run streamlit_app_phase4.py
+streamlit run streamlit_app.py
 # Open http://localhost:8501 in your browser
 ```
 
@@ -366,8 +368,8 @@ context = retriever.build_enhanced_context(query, k=5)
 ```bash
 git clone https://github.com/smarimus/ai-finance-assistant.git
 cd ai-finance-assistant
-python -m venv .venv
-source .venv/bin/activate  # macOS/Linux
+python -m venv venv
+source venv/bin/activate  # macOS/Linux
 pip install -r requirements.txt
 ```
 
@@ -382,8 +384,8 @@ cp .env.example .env
 
 ### **3. Launch Application**
 ```bash
-# Full application with all features
-streamlit run streamlit_app_phase4.py
+# Activate virtual environment and run the app
+source venv/bin/activate && streamlit run streamlit_app.py
 
 # Access at: http://localhost:8501
 ```
@@ -465,7 +467,7 @@ ai_finance_assistant/
 ├── tests/                      # 🧪 Comprehensive test suite
 ├── scripts/                    # 🔧 Development utilities
 ├── config.yaml                 # 📝 Application configuration
-└── streamlit_app_phase4.py     # 🚀 Main application entry
+└── streamlit_app.py            # 🚀 Main application entry
 ```
 
 ---
@@ -557,9 +559,9 @@ ai_finance_assistant/
 **📱 Try it yourself:**
 ```bash
 git clone https://github.com/smarimus/ai-finance-assistant.git
-cd ai-finance-assistant && source .venv/bin/activate
+cd ai-finance-assistant && source venv/bin/activate
 pip install -r requirements.txt
-streamlit run streamlit_app_phase4.py
+streamlit run streamlit_app.py
 ```
 
 ---

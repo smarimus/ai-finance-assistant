@@ -4,7 +4,7 @@ app:
   version: "1.0.0"
   debug: false
   log_level: "INFO"
-  show_workflow_status: false
+  show_workflow_status: true
 
 # API Configuration
 apis:
