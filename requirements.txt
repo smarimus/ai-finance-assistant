@@ -1,24 +1,32 @@
 # AI Finance Assistant - Dependencies
 # Status: WORKING - App successfully running on Python 3.9 with these versions
-# Last tested: September 2025
-# Note: LangGraph 0.0.25 with CheckpointAt import fix applied
+# Last updated: September 2025
+# Note: All flows working properly with routing fixes applied
 
-# Core AI and LangChain (WORKING VERSIONS)
-langchain==0.1.0
-langgraph==0.0.25
-langchain-core==0.1.30
-langchain-community==0.0.19
-langchain-openai==0.0.5
-openai==1.12.0
+# Core AI and LangChain (UPDATED WORKING VERSIONS)
+langchain==0.1.20
+langgraph==0.0.20
+langchain-core==0.1.53
+langchain-community==0.0.38
+langchain-openai==0.1.7
+langchain-text-splitters==0.0.2
+openai==1.99.9
+langsmith==0.1.147
 
-# Vector Database (WORKING VERSIONS)
-faiss-cpu==1.7.4
-sentence-transformers==2.2.2
+# Vector Database and ML (UPDATED VERSIONS)
+faiss-cpu==1.12.0
+sentence-transformers==2.7.0
+torch==2.8.0
+transformers==4.55.2
+tokenizers==0.21.4
+huggingface-hub==0.34.4
+safetensors==0.6.2
 nltk==3.9.1
 sentencepiece==0.2.1
+scikit-learn==1.6.1
 
-# Market Data
-yfinance==0.2.12
+# Market Data (UPDATED VERSIONS)
+yfinance==0.2.65
 alpha-vantage==2.3.1
 requests==2.31.0
 
@@ -26,35 +34,48 @@ requests==2.31.0
 beautifulsoup4==4.12.3
 lxml==5.1.0
 
-# Streamlit (WORKING VERSION)
-streamlit==1.31.0
+# Streamlit and Web Interface (UPDATED VERSIONS)
+streamlit==1.48.1
+plotly==5.24.1
+matplotlib==3.9.4
+seaborn==0.13.2
+altair==5.5.0
+pydeck==0.9.1
+
+# Data Processing (UPDATED VERSIONS)
+pandas==2.3.1
+numpy==1.26.4
+scipy==1.13.1
+pyarrow==21.0.0
+
+# Utilities (UPDATED VERSIONS)
+python-dotenv==1.1.1
+PyYAML==6.0.2
+pydantic==2.11.7
+pydantic-core==2.33.2
+typing-extensions==4.14.1
+cachetools==6.1.0
+tenacity==8.5.0
+tiktoken==0.11.0
+
+# HTTP and Networking (NEW ADDITIONS)
+httpx==0.28.1
+httpcore==1.0.9
+aiohttp==3.12.15
+websockets==15.0.1
+
+# Development and Testing (UPDATED VERSIONS)
+pytest==7.4.4
+pytest-asyncio==0.21.2
+pytest-cov==4.1.0
+pytest-mock==3.14.1
+pytest-xdist==3.8.0
+
+# Optional dependencies for better performance
 rich==13.9.4
 tzlocal==5.3.1
 validators==0.35.0
-cachetools==5.5.2
-importlib-metadata==7.2.1
-numpy==1.26.4
+importlib-metadata==8.7.0
 packaging==23.2
-pillow==10.4.0
-protobuf==4.25.8
-tenacity==8.5.0
-plotly==5.17.0
-matplotlib==3.8.2
-seaborn==0.13.0
-
-# Data Processing
-pandas==2.1.4
-numpy==1.24.3
-scipy==1.11.4
-
-# Utilities
-python-dotenv==1.0.0
-PyYAML==6.0.1
-pydantic==2.5.0
-typing-extensions==4.9.0
-
-# Testing (Optional)
-pytest==7.4.3
-pytest-asyncio==0.21.1
-pytest-cov==4.1.0
-pytest-mock==3.12.0
+pillow==11.3.0
+protobuf==6.31.1
