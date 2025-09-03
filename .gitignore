@@ -46,16 +46,23 @@ ENV/
 # Jupyter Notebook
 .ipynb_checkpoints
 
-# Data files (may contain sensitive portfolio data)
-data/
+# Data files (may contain sensitive portfolio data)  
+# Exclude top-level data/ directory but allow src/data/
+/data/
 *.csv
 *.xlsx
-*.json
 
-# FAISS index files
+# Allow JSON files in src/data/ but exclude others elsewhere
+*.json
+!src/data/**/*.json
+
+# FAISS index files (cache files - exclude these, except for src/data/)
 *.faiss
 *_docs.pkl
 *_metadata.pkl
+!src/data/faiss_index.faiss
+!src/data/faiss_index_docs.pkl
+!src/data/faiss_index_metadata.pkl
 
 # Logs
 *.log

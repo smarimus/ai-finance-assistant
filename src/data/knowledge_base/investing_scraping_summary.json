@@ -1,0 +1,17 @@
+{
+  "source": "Investing.com",
+  "total_articles": 27,
+  "categories": {
+    "education": {
+      "count": 26,
+      "words": 48086
+    },
+    "general": {
+      "count": 1,
+      "words": 565
+    }
+  },
+  "total_words": 48651,
+  "urls_processed": 27,
+  "scraping_date": "2025-08-13 23:17:36"
+}
