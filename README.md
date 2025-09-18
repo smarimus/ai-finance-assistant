@@ -135,7 +135,137 @@ ai_finance_assistant/
 ├── scripts/              # 🔧 Development tools
 └── docs/                 # 📚 Documentation
 ```
+---
+## Architecture Diagrams
 
+### 1. High-Level System Architecture
+
+```mermaid
+graph TB
+    subgraph "User Interface Layer"
+        UI[Streamlit Web App]
+        CHAT[Chat Tab]
+        PORT[Portfolio Tab]
+        MARKET[Market Tab]
+        GOALS[Goals Tab]
+    end
+    
+    subgraph "Workflow Orchestration"
+        WF[LangGraph Workflow]
+        ROUTE[Query Router]
+        COORD[Agent Coordinator]
+        FORMAT[Response Formatter]
+    end
+    
+    subgraph "Multi-Agent System"
+        QA[Finance Q&A Agent]
+        PA[Portfolio Agent]
+        MA[Market Agent]
+        GA[Goal Agent]
+        BASE[BaseFinanceAgent]
+    end
+    
+    subgraph "Knowledge & Data Layer"
+        RAG[RAG System]
+        VECTOR[FAISS Vector Store]
+        PORTFOLIO[Portfolio Data]
+        MARKET_DATA[Market Data Provider]
+        CALC[Calculation Engine]
+    end
+    
+    subgraph "External Services"
+        OPENAI[OpenAI API]
+        ALPHA[Alpha Vantage API]
+        FILES[Local Storage]
+    end
+    
+    UI --> WF
+    CHAT --> WF
+    PORT --> WF
+    MARKET --> WF
+    GOALS --> WF
+    
+    WF --> ROUTE
+    ROUTE --> COORD
+    COORD --> FORMAT
+    
+    COORD --> QA
+    COORD --> PA
+    COORD --> MA
+    COORD --> GA
+    
+    QA --> BASE
+    PA --> BASE
+    MA --> BASE
+    GA --> BASE
+    
+    QA --> RAG
+    PA --> PORTFOLIO
+    PA --> CALC
+    MA --> MARKET_DATA
+    GA --> CALC
+    
+    RAG --> VECTOR
+    MARKET_DATA --> ALPHA
+    QA --> OPENAI
+    PA --> OPENAI
+    MA --> OPENAI
+    GA --> OPENAI
+    
+    VECTOR --> FILES
+    PORTFOLIO --> FILES
+```
+
+### 2. Agent Communication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant WebUI
+    participant Workflow
+    participant Router
+    participant Agent
+    participant Knowledge
+    participant LLM
+    
+    User->>WebUI: Submit Query
+    WebUI->>Workflow: Process Request
+    Workflow->>Router: Classify Intent
+    Router->>Agent: Route to Appropriate Agent
+    Agent->>Knowledge: Retrieve Context
+    Knowledge-->>Agent: Return Relevant Data
+    Agent->>LLM: Generate Response
+    LLM-->>Agent: Return AI Response
+    Agent-->>Workflow: Formatted Response
+    Workflow-->>WebUI: Update State
+    WebUI-->>User: Display Result
+```
+
+### 3. Multi-Agent Routing Logic
+
+```mermaid
+flowchart TD
+    START([User Query]) --> CLASSIFY{Classify Intent}
+    
+    CLASSIFY -->|Educational| QA[Finance Q&A Agent]
+    CLASSIFY -->|Portfolio Analysis| PORT[Portfolio Agent]
+    CLASSIFY -->|Market Data| MARKET[Market Agent]
+    CLASSIFY -->|Goal Planning| GOAL[Goal Agent]
+    CLASSIFY -->|Unclear| DEFAULT[Default to Q&A]
+    
+    QA --> RAG[RAG Retrieval]
+    PORT --> CALC[Portfolio Calculations]
+    MARKET --> API[Alpha Vantage API]
+    GOAL --> PLANNING[Financial Planning]
+    
+    RAG --> LLM[OpenAI LLM]
+    CALC --> LLM
+    API --> LLM
+    PLANNING --> LLM
+    
+    LLM --> RESPONSE[Format Response]
+    RESPONSE --> END([Return to User])
+```
 ---
 
 ## � **What You Get**
@@ -215,30 +345,6 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 - Add custom financial calculations
 - Integrate additional data sources
 - Create specialized financial tools
-
----
-
-## 📈 **Project Status & Roadmap**
-
-### **✅ Current Features** (v1.0)
-- Multi-agent AI system with intelligent routing
-- Real-time market data integration (Alpha Vantage)
-- Portfolio analysis with CSV upload
-- Interactive web interface with 4 specialized tabs
-- Comprehensive knowledge base with 1,300+ documents
-
-### **🔄 Coming Soon** (v1.1)
-- [ ] Additional market data sources
-- [ ] Enhanced portfolio optimization algorithms
-- [ ] Mobile app companion
-- [ ] API endpoints for external integration
-- [ ] Advanced charting and technical analysis
-
-### **🚀 Future Vision** (v2.0+)
-- [ ] Machine learning-based predictions
-- [ ] Multi-language support
-- [ ] Social features and community insights
-- [ ] Enterprise deployment options
 
 ---
 
@@ -494,41 +600,7 @@ ai_finance_assistant/
 
 ---
 
-## � **Project Phases & Milestones**
-
-### **✅ Phase 1: Foundation** (Completed)
-- RAG system with FAISS vector database
-- Financial knowledge base (1,308 documents)
-- Basic Streamlit interface
-
-### **✅ Phase 2: LLM Integration** (Completed)  
-- OpenAI GPT-3.5-turbo integration
-- Enhanced conversation interface
-- Source citation and confidence scoring
-
-### **✅ Phase 3: Multi-Agent System** (Completed)
-- Intelligent query routing
-- 4-agent coordination system
-- Session state management
-
-### **✅ Phase 4: Portfolio Analysis** (Completed)
-- CSV upload functionality
-- Portfolio metrics calculation
-- Interactive visualizations
-
-### **✅ Phase 5: Market Integration** (Completed)
-- Alpha Vantage API integration
-- Real-time market dashboard
-- AI-powered market analysis
-
-### **✅ Phase 6: Production Ready** (Completed)
-- Comprehensive testing suite
-- Performance optimization
-- Documentation and deployment
-
----
-
-## 🤝 **For Recruiters & Technical Reviewers**
+## 🤝 ****
 
 ### **Skills Demonstrated:**
 - **🧠 AI/ML Engineering**: Multi-agent systems, RAG, vector databases
